@@ -200,9 +200,8 @@ def students():
 @admin_bp.route("/students/add", methods=["POST"])
 @login_required
 def add_student():
-    from flask_login import current_user
     import random, string
-    teacher  = current_user
+    teacher = Teacher.query.get(session["teacher_id"])
     name     = request.form.get("full_name", "").strip().title()
     grade_id = request.form.get("grade_id") or None
     stream_id = request.form.get("stream_id") or None
@@ -315,7 +314,12 @@ def import_students():
 @role_required("admin", "principal", "teacher")
 def edit_student_name(student_id):
     """Fix a spelling error in a student's name."""
+    teacher = Teacher.query.get(session["teacher_id"])
     student = Student.query.get_or_404(student_id)
+    # Teachers can only edit students in their own class
+    if teacher.role == "teacher" and student.stream_id != teacher.stream_id:
+        flash("You can only edit students in your own class.", "danger")
+        return redirect(url_for("admin.students"))
     new_name = request.form.get("full_name", "").strip()
     if new_name and len(new_name) >= 2:
         old_name = student.full_name
@@ -376,8 +380,7 @@ def edit_term():
 @login_required
 def my_class():
     """Class teacher views and manages their own students."""
-    from flask_login import current_user
-    teacher = current_user
+    teacher = Teacher.query.get(session["teacher_id"])
 
     if teacher.role in ("admin", "principal"):
         return redirect(url_for("admin.students"))
@@ -403,9 +406,8 @@ def my_class():
 @login_required
 def my_class_add_student():
     """Class teacher adds a new student to their class."""
-    from flask_login import current_user
     import random, string
-    teacher = current_user
+    teacher = Teacher.query.get(session["teacher_id"])
 
     if not teacher.stream_id and teacher.role not in ("admin", "principal"):
         flash("Not assigned to a class.", "danger")
@@ -447,8 +449,7 @@ def my_class_add_student():
 @login_required
 def my_class_edit_student(student_id):
     """Class teacher edits a student in their class."""
-    from flask_login import current_user
-    teacher = current_user
+    teacher = Teacher.query.get(session["teacher_id"])
     student = Student.query.get_or_404(student_id)
 
     # Security: only allow editing students in teacher's class
@@ -471,8 +472,7 @@ def my_class_edit_student(student_id):
 @login_required
 def my_class_remove_student(student_id):
     """Class teacher removes (deactivates) a student from their class."""
-    from flask_login import current_user
-    teacher = current_user
+    teacher = Teacher.query.get(session["teacher_id"])
     student = Student.query.get_or_404(student_id)
 
     if teacher.role not in ("admin", "principal"):
@@ -677,8 +677,7 @@ def clear_page():
 @admin_bp.route("/students/<int:student_id>/remove", methods=["POST"])
 @login_required
 def remove_student(student_id):
-    from flask_login import current_user
-    teacher = current_user
+    teacher = Teacher.query.get(session["teacher_id"])
     student = Student.query.get_or_404(student_id)
     if teacher.role == "teacher" and student.stream_id != teacher.stream_id:
         flash("You can only remove students from your own class.", "danger")
