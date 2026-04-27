@@ -170,6 +170,10 @@ def save_marks():
             else:
                 code, label = None, None
 
+            # Skip empty inputs entirely — don't save None marks
+            if effective is None:
+                continue
+
             # Upsert — update if exists, insert if not
             mark = Mark.query.filter_by(
                 student_id=student.id,
