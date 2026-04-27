@@ -10,9 +10,20 @@
        onclick="this.textContent='⏳ Generating...';this.style.opacity='.6'">
       📦 Download ALL PDFs
     </a>
-    <a href="{{ url_for('reports.download_marks_excel') }}" class="btn btn-g">
-      📊 Export Marks to Excel
-    </a>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="{{ url_for('reports.download_marks_excel_by_assessment', assessment_number=1) }}" class="btn btn-g">
+        📥 Entry Assessment Excel
+      </a>
+      <a href="{{ url_for('reports.download_marks_excel_by_assessment', assessment_number=2) }}" class="btn btn-g">
+        📥 Mid Term Excel
+      </a>
+      <a href="{{ url_for('reports.download_marks_excel_by_assessment', assessment_number=3) }}" class="btn btn-g">
+        📥 End Term Excel
+      </a>
+      <a href="{{ url_for('reports.download_marks_excel') }}" class="btn btn-o">
+        📊 All Assessments (Combined)
+      </a>
+    </div>
   </div>
 </div>
 
