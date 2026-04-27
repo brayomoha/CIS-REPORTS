@@ -96,16 +96,16 @@
     <a href="{{ url_for('admin.edit_term') }}" class="na {% if request.endpoint=='admin.edit_term' %}on{% endif %}"><span class="ic">📅</span> Term Dates</a>
     <a href="{{ url_for('admin.streams') }}" class="na {% if request.endpoint=='admin.streams' %}on{% endif %}"><span class="ic">🏫</span> Streams</a>
     <a href="{{ url_for('upload.index') }}" class="na {% if request.blueprint=='upload' %}on{% endif %}"><span class="ic">⬆️</span> Upload Data</a>
-    {% if session.get('role') in ['admin','principal'] %}
+    {% if session.get('teacher_role') in ['admin','principal'] %}
     <a href="{{ url_for('admin.clear_page') }}" class="na {% if request.endpoint=='admin.clear_page' %}on{% endif %}" style="color:#CC0000"><span class="ic">🗑</span> Clear Data</a>
     {% endif %}
-    {% if session.get('role') == 'teacher' %}
+    {% if session.get('teacher_role') == 'teacher' %}
     <a href="{{ url_for('admin.my_class') }}" class="na {% if request.endpoint=='admin.my_class' %}on{% endif %}"><span class="ic">🏫</span> My Class</a>
     {% endif %}
     {% endif %}
     <div class="sb-sec">Assessments</div>
     <a href="{{ url_for('marks.index') }}" class="na {% if request.blueprint=='marks' %}on{% endif %}"><span class="ic">✏️</span> Enter Marks</a>
-    {% if session.get('role') == 'teacher' %}
+    {% if session.get('teacher_role') == 'teacher' %}
     <a href="{{ url_for('admin.my_class') }}" class="na {% if request.endpoint=='admin.my_class' %}on{% endif %}"><span class="ic">🏫</span> My Class</a>
     {% endif %}
     <a href="{{ url_for('reports.overview') }}" class="na {% if request.blueprint=='reports' %}on{% endif %}"><span class="ic">📄</span> Report Cards</a>
