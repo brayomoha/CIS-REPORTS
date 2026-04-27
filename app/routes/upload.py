@@ -331,10 +331,15 @@ def upload_marks():
                         if not mark:
                             mark = Mark(student_id=student.id, assessment_id=assessment.id, subject=subj)
                             db.session.add(mark)
-                        mark.paper1_score = p1
-                        mark.paper2_score = p2
-                        mark.combined_score = combined
-                        mark.score = None
+                        # Save as single score — use combined % or p1 directly
+                        max_s = 100 if get_grade_level(grade_name) == "junior" else 30
+                        raw_eff = float(combined) if combined else (float(p1) if p1 else None)
+                        effective = min(int(round(raw_eff)), max_s) if raw_eff is not None else None
+                        code, label = assign_performance_level(effective, grade_name) if effective else (None, None)
+                        mark.score = effective
+                        mark.paper1_score = None
+                        mark.paper2_score = None
+                        mark.combined_score = None
                         mark.grade_code = code
                         mark.grade_label = label
                     else:
