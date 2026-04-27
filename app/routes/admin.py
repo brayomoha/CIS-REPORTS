@@ -172,7 +172,6 @@ def delete_teacher(teacher_id):
 
 @admin_bp.route("/students")
 @login_required
-@role_required("admin", "principal")
 def students():
     grade_id  = request.args.get("grade_id", type=int)
     stream_id = request.args.get("stream_id", type=int)
@@ -200,30 +199,50 @@ def students():
 
 @admin_bp.route("/students/add", methods=["POST"])
 @login_required
-@role_required("admin", "principal")
 def add_student():
-    name        = request.form.get("full_name", "").strip()
-    adm_no      = request.form.get("admission_no", "").strip()
-    grade_id    = int(request.form.get("grade_id"))
-    stream_id   = request.form.get("stream_id") or None
-    gender      = request.form.get("gender", "")
-    parent_email = request.form.get("parent_email", "").strip() or None
+    from flask_login import current_user
+    import random, string
+    teacher  = current_user
+    name     = request.form.get("full_name", "").strip().title()
+    grade_id = request.form.get("grade_id") or None
+    stream_id = request.form.get("stream_id") or None
+    gender   = request.form.get("gender", "")
 
-    if Student.query.filter_by(admission_no=adm_no).first():
-        flash(f"Admission number {adm_no} already exists.", "danger")
+    # Teachers can only add to their own class
+    if teacher.role == "teacher":
+        stream_id = teacher.stream_id
+        if stream_id:
+            stream = Stream.query.get(stream_id)
+            grade_id = stream.grade_id
+        else:
+            flash("You are not assigned to a class.", "danger")
+            return redirect(url_for("admin.students"))
+
+    if not name or not grade_id:
+        flash("Name and grade are required.", "danger")
         return redirect(url_for("admin.students"))
+
+    # Auto-generate unique admission number
+    stream = Stream.query.get(int(stream_id)) if stream_id else None
+    gc = Grade.query.get(int(grade_id)).name.replace("Grade ", "G").replace(" ", "")
+    sn = stream.name[:1] if stream else "X"
+    while True:
+        suffix = "".join(random.choices(string.digits, k=4))
+        adm = f"CIS-{gc}{sn}-{suffix}"
+        if not Student.query.filter_by(admission_no=adm).first():
+            break
 
     student = Student(
         full_name=name,
-        admission_no=adm_no,
-        grade_id=grade_id,
+        admission_no=adm,
+        grade_id=int(grade_id),
         stream_id=int(stream_id) if stream_id else None,
-        gender=gender,
-        parent_email=parent_email,
+        gender=gender or None,
+        is_active=True,
     )
     db.session.add(student)
     db.session.commit()
-    flash(f"Student '{name}' added successfully.", "success")
+    flash(f"✅ {name} added successfully.", "success")
     return redirect(url_for("admin.students"))
 
 
@@ -653,3 +672,18 @@ def clear_page():
     streams      = Stream.query.join(Grade).order_by(Grade.sort_order, Stream.name).all()
     return render_template("admin/clear.html",
                            assessments=assessments, grades=grades, streams=streams)
+
+
+@admin_bp.route("/students/<int:student_id>/remove", methods=["POST"])
+@login_required
+def remove_student(student_id):
+    from flask_login import current_user
+    teacher = current_user
+    student = Student.query.get_or_404(student_id)
+    if teacher.role == "teacher" and student.stream_id != teacher.stream_id:
+        flash("You can only remove students from your own class.", "danger")
+        return redirect(url_for("admin.students"))
+    student.is_active = False
+    db.session.commit()
+    flash(f"✅ {student.full_name} removed from class.", "success")
+    return redirect(url_for("admin.students"))
