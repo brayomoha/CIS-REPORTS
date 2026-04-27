@@ -97,28 +97,31 @@ def compute_student_summary(student_marks, grade_name):
     for mark in student_marks:
         subj = mark.subject
 
-        # Determine the effective score for this subject
-        if subj in split:
+        # Always use single score — check score first, then combined_score as fallback
+        # (combined_score may exist for data uploaded before the fix)
+        effective = mark.score
+        if effective is None:
             effective = mark.combined_score
-        else:
-            effective = mark.score
+        if effective is None:
+            effective = mark.paper1_score  # last resort fallback
 
         if effective is None:
             subject_results[subj] = {
-                "score": None,
-                "paper1": mark.paper1_score,
-                "paper2": mark.paper2_score,
-                "grade_code": "—",
+                "score":       None,
+                "grade_code":  "—",
                 "grade_label": "Not Assessed",
             }
             continue
+
+        # Cap at max for grade level, store as whole integer (no decimals)
+        level = get_grade_level(grade_name)
+        max_score = 100 if level == "junior" else 30
+        effective = min(int(round(float(effective))), max_score)
 
         code, label = assign_performance_level(effective, grade_name)
 
         subject_results[subj] = {
             "score":       effective,
-            "paper1":      mark.paper1_score,
-            "paper2":      mark.paper2_score,
             "grade_code":  code,
             "grade_label": label,
         }
