@@ -329,11 +329,10 @@ def overview():
 @login_required
 @role_required("admin", "principal")
 def download_all_pdfs():
-    """Generate and ZIP all report cards for every student in the school."""
+    """Generate and ZIP all report cards for every student in the school — fully in memory."""
     import zipfile
-    from datetime import datetime
-    from ..pdf_generator import generate_report_pdf
-    from flask import current_app
+    import io
+    from ..pdf_generator import generate_report_pdf_bytes
     from ..models import Grade, Stream
 
     active_term = Term.query.filter_by(is_active=True).first()
@@ -341,53 +340,60 @@ def download_all_pdfs():
         flash("No active term.", "warning")
         return redirect(url_for("reports.overview"))
 
-    reports_folder = current_app.config["REPORTS_FOLDER"]
-    os.makedirs(reports_folder, exist_ok=True)
-
-    zip_filename = f"CIS_ALL_Reports_Term{active_term.term_number}_{active_term.academic_year.year}.zip"
-    zip_path = os.path.join(reports_folder, zip_filename)
-
+    zip_buffer = io.BytesIO()
     grades = Grade.query.order_by(Grade.sort_order).all()
-    total = 0
+    total  = 0
+    errors = 0
 
-    with zipfile.ZipFile(zip_path, "w") as zf:
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for grade in grades:
             for stream in grade.streams:
-                students = (
-                    Student.query
-                    .filter_by(stream_id=stream.id, is_active=True)
-                    .order_by(Student.full_name)
-                    .all()
-                )
+                students = Student.query.filter_by(
+                    stream_id=stream.id, is_active=True
+                ).order_by(Student.full_name).all()
+
                 for student in students:
-                    rc = ReportCard.query.filter_by(
-                        student_id=student.id, term_id=active_term.id
-                    ).first()
-
-                    marks_by_assessment = _load_student_marks(student.id, active_term.id)
-                    report_data = compute_term_report(student, active_term, marks_by_assessment)
-
-                    report_data["comments"] = {
-                        "performance":   rc.comment_performance  if rc else "",
-                        "competencies":  rc.comment_competencies if rc else "",
-                        "values":        rc.comment_values       if rc else "",
-                        "general":       rc.general_comment      if rc else "",
-                    }
-                    if student.stream and student.stream.teachers:
-                        report_data["class_teacher"] = student.stream.teachers[0].full_name
-                    else:
-                        report_data["class_teacher"] = ""
-
                     try:
-                        pdf_path = generate_report_pdf(report_data, student)
-                        # Organise into folders by grade
-                        folder = f"{grade.name}/{stream.name}"
-                        zf.write(pdf_path, arcname=f"{folder}/{student.full_name}_Report.pdf")
+                        rc = ReportCard.query.filter_by(
+                            student_id=student.id, term_id=active_term.id
+                        ).first()
+
+                        marks_by_assessment = _load_student_marks(student.id, active_term.id)
+                        report_data = compute_term_report(student, active_term, marks_by_assessment)
+                        report_data["comments"] = {
+                            "performance":  rc.comment_performance  if rc else "",
+                            "competencies": rc.comment_competencies if rc else "",
+                            "values":       rc.comment_values       if rc else "",
+                            "general":      rc.general_comment      if rc else "",
+                        }
+                        # Get class teacher name
+                        teacher_name = ""
+                        if student.stream and student.stream.teachers:
+                            teacher_name = student.stream.teachers[0].full_name
+                        report_data["class_teacher"] = teacher_name
+
+                        # Generate PDF bytes in memory
+                        pdf_bytes = generate_report_pdf_bytes(report_data, student)
+                        safe_name = student.full_name.replace("/", "-").replace("\\", "-")
+                        zf.writestr(
+                            f"{grade.name}/{stream.name}/{safe_name}_Report.pdf",
+                            pdf_bytes
+                        )
                         total += 1
                     except Exception as e:
+                        errors += 1
                         print(f"  ⚠ Skipped {student.full_name}: {e}")
 
-    return send_file(zip_path, as_attachment=True, download_name=zip_filename)
+    zip_buffer.seek(0)
+    zip_filename = f"CIS_ALL_Reports_Term{active_term.term_number}_{active_term.academic_year.year}.zip"
+
+    if total == 0:
+        flash("No report cards could be generated. Make sure students have marks and comments.", "warning")
+        return redirect(url_for("reports.overview"))
+
+    flash(f"✅ Generated {total} report cards" + (f" ({errors} skipped)" if errors else ""), "success")
+    return send_file(zip_buffer, as_attachment=True, download_name=zip_filename,
+                     mimetype="application/zip")
 
 
 @reports_bp.route("/download/marks-excel")
