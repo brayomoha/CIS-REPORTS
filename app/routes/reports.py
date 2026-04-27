@@ -518,3 +518,109 @@ def download_marks_excel():
     wb.save(filepath)
 
     return send_file(filepath, as_attachment=True, download_name=filename)
+
+
+@reports_bp.route("/download/marks-excel/<int:assessment_number>")
+@login_required
+@role_required("admin", "principal")
+def download_marks_excel_by_assessment(assessment_number):
+    """Export marks for ONE specific assessment to Excel."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    active_term = Term.query.filter_by(is_active=True).first()
+    if not active_term:
+        flash("No active term.", "warning")
+        return redirect(url_for("main.dashboard"))
+
+    assessment = Assessment.query.filter_by(
+        term_id=active_term.id, number=assessment_number).first()
+    if not assessment:
+        flash("Assessment not found.", "warning")
+        return redirect(url_for("main.dashboard"))
+
+    wb = openpyxl.Workbook()
+    NAVY  = "002147"
+    WHITE = "FFFFFF"
+    GOLD  = "C8962D"
+
+    hdr_font   = Font(bold=True, color=WHITE, size=10)
+    hdr_fill   = PatternFill("solid", fgColor=NAVY)
+    subhdr_fill = PatternFill("solid", fgColor=GOLD)
+    center     = Alignment(horizontal="center", vertical="center")
+
+    grades = Grade.query.order_by(Grade.sort_order).all()
+    first  = True
+
+    for grade in grades:
+        subjects = get_subjects(grade.name)
+        streams  = Stream.query.filter_by(grade_id=grade.id).all()
+        students_all = Student.query.filter(
+            Student.stream_id.in_([s.id for s in streams]),
+            Student.is_active == True
+        ).order_by(Student.full_name).all()
+
+        if not students_all:
+            continue
+
+        ws = wb.active if first else wb.create_sheet()
+        ws.title = grade.name[:31]
+        first = False
+
+        # Header
+        ws.merge_cells(start_row=1, start_column=1,
+                       end_row=1, end_column=len(subjects)+3)
+        title_cell = ws.cell(1, 1,
+            f"CIS — {grade.name} — {assessment.name} — Term {active_term.term_number} {active_term.academic_year.year}")
+        title_cell.font = Font(bold=True, color=WHITE, size=11)
+        title_cell.fill = hdr_fill
+        title_cell.alignment = center
+
+        # Column headers
+        headers = ["#", "Admission No", "Student Name"] + subjects
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(2, col, h)
+            cell.font = hdr_font
+            cell.fill = hdr_fill
+            cell.alignment = center
+
+        # Data rows
+        for row_idx, student in enumerate(students_all, 3):
+            marks = {m.subject: m for m in Mark.query.filter_by(
+                student_id=student.id, assessment_id=assessment.id).all()}
+
+            ws.cell(row_idx, 1, row_idx - 2)
+            ws.cell(row_idx, 2, student.admission_no)
+            ws.cell(row_idx, 3, student.full_name)
+
+            for col_idx, subject in enumerate(subjects, 4):
+                mark = marks.get(subject)
+                if mark:
+                    val = mark.score or mark.combined_score or mark.paper1_score
+                    if val is not None:
+                        cell = ws.cell(row_idx, col_idx, round(float(val), 1))
+                        cell.alignment = center
+                        if mark.grade_code:
+                            ws.cell(row_idx, col_idx).comment = None
+
+        # Column widths
+        ws.column_dimensions["A"].width = 5
+        ws.column_dimensions["B"].width = 14
+        ws.column_dimensions["C"].width = 28
+        for i in range(4, len(subjects)+4):
+            ws.column_dimensions[get_column_letter(i)].width = 12
+
+    # Save and send
+    import io
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    ass_names = {1: "Entry_Assessment", 2: "Mid_Term", 3: "End_Term"}
+    filename = f"CIS_{ass_names.get(assessment_number, f'Assessment_{assessment_number}')}_Term{active_term.term_number}_{active_term.academic_year.year}.xlsx"
+
+    from flask import send_file
+    return send_file(buf, as_attachment=True,
+                     download_name=filename,
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
