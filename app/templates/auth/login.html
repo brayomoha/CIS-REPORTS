@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Login — CIS School System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:linear-gradient(135deg,#002147 0%,#003d7a 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.wrap{width:100%;max-width:400px}
+.logo{text-align:center;margin-bottom:28px}
+.logo h1{font-family:'DM Serif Display',serif;font-size:1.6rem;color:#fff;line-height:1.2}
+.logo p{font-size:.68rem;color:#f0c96a;margin-top:5px;letter-spacing:.06em}
+.logo .bar{width:40px;height:3px;background:#C8962D;margin:12px auto 0;border-radius:2px}
+.card{background:#fff;border-radius:10px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.card h2{font-family:'DM Serif Display',serif;font-size:1.3rem;color:#002147;margin-bottom:4px}
+.card .sub{font-size:.8rem;color:#9a9a90;margin-bottom:22px}
+.fg{margin-bottom:14px}
+label{display:block;font-size:.76rem;font-weight:600;color:#444;margin-bottom:4px}
+input{width:100%;padding:9px 11px;border:1.5px solid #e8e8e2;border-radius:7px;font-size:.85rem;font-family:inherit;transition:border-color .15s}
+input:focus{outline:none;border-color:#002147;box-shadow:0 0 0 3px rgba(0,33,71,.08)}
+.btn{width:100%;padding:10px;background:#002147;color:#fff;border:none;border-radius:7px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;margin-top:4px}
+.btn:hover{background:#003366}
+.fl{padding:9px 12px;border-radius:7px;font-size:.8rem;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.f-danger{background:#fdeaea;color:#a01010;border-left:4px solid #a01010}
+.f-success{background:#e8f5ec;color:#1a7a3a;border-left:4px solid #1a7a3a}
+.f-info{background:#e8eef8;color:#1a5299;border-left:4px solid #1a5299}
+</style></head><body>
+<div class="wrap">
+  <div class="logo">
+    <h1>Creative Integrated School</h1>
+    <p>★ KINDERGARTEN ★ PRIMARY ★ JUNIOR SCHOOL</p>
+    <div class="bar"></div>
+  </div>
+  <div class="card">
+    <h2>Staff Portal</h2>
+    <p class="sub">Sign in with your school email and password</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}<div class="fl f-{{ cat }}">{% if cat=='danger' %}❌{% elif cat=='success' %}✅{% else %}ℹ️{% endif %} {{ msg }}</div>{% endfor %}{% endwith %}
+    <form method="POST">
+      <div class="fg"><label>Email Address</label><input type="email" name="email" placeholder="you@cis.ac.ke" required autofocus></div>
+      <div class="fg"><label>Password</label><input type="password" name="password" placeholder="Your password" required></div>
+      <button type="submit" class="btn">Sign In →</button>
+    </form>
+  </div>
+</div>
+</body></html>

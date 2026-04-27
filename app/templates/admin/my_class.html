@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}My Class{% endblock %}
+{% block topbar_title %}My Class{% endblock %}
+{% block extra_css %}
+<style>
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:10px;padding:28px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-family:'DM Serif Display',serif;font-size:1.1rem;color:#002147;margin-bottom:16px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>{{ stream.grade.name }} {{ stream.name }}</h1>
+    <p>{{ students|length }} learners in your class</p>
+  </div>
+  <div class="ph-act">
+    <button class="btn btn-p" onclick="document.getElementById('addModal').classList.add('show')">+ Add Learner</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr>
+      <th style="width:40px">#</th>
+      <th>Learner Name</th>
+      <th class="c">Admission No</th>
+      <th class="c" style="width:180px">Actions</th>
+    </tr></thead>
+    <tbody>
+    {% for student in students %}
+    <tr>
+      <td style="color:#9a9a90;font-size:.78rem">{{ loop.index }}</td>
+      <td><strong>{{ student.full_name }}</strong></td>
+      <td class="c" style="font-size:.75rem;color:#aaa">{{ student.admission_no }}</td>
+      <td class="c">
+        <button class="btn btn-o btn-xs"
+          onclick="openEdit({{ student.id }},'{{ student.full_name }}')">✏️ Edit</button>
+        <form method="POST"
+              action="{{ url_for('admin.my_class_remove_student', student_id=student.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Remove {{ student.full_name }} from the class list?')">
+          <button type="submit" class="btn btn-bad btn-xs">🗑 Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal" id="addModal">
+  <div class="modal-box">
+    <h3>Add New Learner to {{ stream.grade.name }} {{ stream.name }}</h3>
+    <form method="POST" action="{{ url_for('admin.my_class_add_student') }}">
+      <input type="hidden" name="stream_id" value="{{ stream.id }}">
+      <div class="fg">
+        <label>Full Name</label>
+        <input type="text" name="full_name" required placeholder="e.g. Jane Wanjiku Kamau">
+      </div>
+      <div style="display:flex;gap:9px;margin-top:8px">
+        <button type="submit" class="btn btn-p">Add Learner</button>
+        <button type="button" class="btn btn-o"
+          onclick="document.getElementById('addModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <h3>Edit Learner Name</h3>
+    <form method="POST" id="editForm">
+      <div class="fg">
+        <label>Full Name</label>
+        <input type="text" name="full_name" id="editName" required>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:8px">
+        <button type="submit" class="btn btn-p">Save</button>
+        <button type="button" class="btn btn-o"
+          onclick="document.getElementById('editModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function openEdit(id, name) {
+  document.getElementById('editForm').action = '/admin/my-class/student/' + id + '/edit';
+  document.getElementById('editName').value  = name;
+  document.getElementById('editModal').classList.add('show');
+}
+</script>
+{% endblock %}

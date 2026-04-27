@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block topbar_title %}School Overview{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>School Overview</h1>
+  <p>Mark entry progress for {% if active_term %}Term {{ active_term.term_number }}, {{ active_term.academic_year.year }}{% endif %}</p></div>
+  <div class="ph-act">
+    {% for ass in assessments %}
+    <form method="POST" action="{{ url_for('admin.toggle_assessment', assessment_id=ass.id) }}" style="display:inline">
+      <button type="submit" class="btn {% if ass.is_open %}btn-bad{% else %}btn-ok{% endif %} btn-sm">
+        {% if ass.is_open %}🔒 Close{% else %}🔓 Open{% endif %} {{ ass.name }}
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+
+{% for grade in grades %}
+<div class="card" style="margin-bottom:14px">
+  <div class="card-hd">
+    <div class="card-title">{{ grade.name }}</div>
+    <span style="font-size:.75rem;color:#9a9a90;text-transform:uppercase;letter-spacing:.05em">{{ grade.level_group|replace('_',' ') }}</span>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th>Stream</th><th>Students</th>
+        {% for ass in assessments %}<th class="c">{{ ass.name }}</th>{% endfor %}
+        <th class="c">Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for stream in grade.streams %}
+      {% set sc = completion.get(stream.id, {}) %}
+      <tr>
+        <td><strong>{{ grade.name }} {{ stream.name }}</strong></td>
+        <td>
+          {% set first = sc.values()|list %}
+          {{ first[0].total if first else 0 }}
+        </td>
+        {% for ass in assessments %}
+        {% set c = sc.get(ass.id, {}) %}
+        <td class="c">
+          {% if c %}
+          {% set cpct = ((c.entered / c.total) * 100)|round if c.total > 0 else 0 %}
+          <span style="font-size:.78rem;color:{% if cpct==100 %}#1a7a3a{% elif cpct>0 %}#b86d00{% else %}#9a9a90{% endif %}">
+            {{ c.entered }}/{{ c.total }}
+          </span>
+          <div class="pbar" style="margin-top:4px">
+            <div class="pfill {% if cpct==100 %}green{% else %}gold{% endif %}" style="width:{{ cpct }}%"></div>
+          </div>
+          {% endif %}
+        </td>
+        {% endfor %}
+        <td class="c" style="white-space:nowrap">
+          {% if grade.level_group == 'reception' %}
+            {% for ass in assessments %}{% if ass.number > 1 and ass.is_open %}
+            <a href="{{ url_for('reception.enter_skills', assessment_id=ass.id, stream_id=stream.id) }}" class="btn btn-g btn-xs">Rate Skills</a>
+            {% endif %}{% endfor %}
+          {% else %}
+            {% for ass in assessments %}{% if ass.is_open %}
+            <a href="{{ url_for('marks.enter_marks', assessment_id=ass.id, stream_id=stream.id) }}" class="btn btn-p btn-xs">✏️ Enter</a>
+            {% endif %}{% endfor %}
+          {% endif %}
+          <a href="{{ url_for('reports.comments_list', stream_id=stream.id) }}" class="btn btn-o btn-xs">💬 Comments</a>
+          <a href="{{ url_for('reports.generate_stream_zip', stream_id=stream.id) }}" class="btn btn-g btn-xs">⬇️ ZIP</a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Reception Skills — {{ stream.grade.name }} {{ stream.name }}{% endblock %}
+{% block topbar_title %}Reception Skill Ratings{% endblock %}
+{% block extra_css %}
+<style>
+.skill-table th{font-size:.7rem;padding:7px 9px}
+.skill-table td{padding:6px 9px;vertical-align:middle}
+.skill-table td:first-child{font-size:.8rem;max-width:200px}
+.rating-sel{padding:4px 6px;font-size:.78rem;border-radius:6px;border:1.5px solid #e8e8e2;background:#fff;cursor:pointer;min-width:80px}
+.rating-sel:focus{outline:none;border-color:#002147}
+.rating-sel option[value="4"]{color:#1a7a3a;font-weight:700}
+.rating-sel option[value="3"]{color:#1a5299;font-weight:700}
+.rating-sel option[value="2"]{color:#b86d00;font-weight:700}
+.rating-sel option[value="1"]{color:#a01010;font-weight:700}
+.section-label{background:#f4f4f0;font-weight:700;color:#002147;padding:8px 10px;font-size:.78rem;letter-spacing:.03em}
+</style>{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>Reception {{ stream.name }} — Skill Ratings</h1>
+    <p>{{ assessment.name }} · {{ students|length }} learners · Rate each skill 1–4</p>
+  </div>
+  <div class="ph-act"><a href="{{ url_for('marks.index') }}" class="btn btn-o btn-sm">← Back</a></div>
+</div>
+
+<div style="background:#e8eef8;border-left:4px solid #1a5299;padding:10px 14px;border-radius:6px;font-size:.8rem;color:#1a5299;margin-bottom:16px">
+  <strong>Rating Scale:</strong> &nbsp;
+  <span style="color:#1a7a3a;font-weight:700">4 = EE (Exceeding)</span> &nbsp;·&nbsp;
+  <span style="color:#1a5299;font-weight:700">3 = ME (Meeting)</span> &nbsp;·&nbsp;
+  <span style="color:#b86d00;font-weight:700">2 = AE (Approaching)</span> &nbsp;·&nbsp;
+  <span style="color:#a01010;font-weight:700">1 = NMP (Needs More Practice)</span>
+</div>
+
+<form method="POST" action="{{ url_for('reception.save_skills') }}">
+  <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+  <input type="hidden" name="stream_id" value="{{ stream.id }}">
+
+  {% for section, items in sections.items() %}
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+    <div class="section-label">{{ section }}</div>
+    <div class="tw"><table class="skill-table">
+      <thead><tr>
+        <th style="min-width:200px">Skill Item</th>
+        {% for student in students %}<th class="c" style="min-width:110px;font-size:.68rem">{{ student.full_name.split()[0] }}<br><span style="font-weight:400;color:#aaa">{{ student.full_name.split()[-1] if student.full_name.split()|length > 1 else '' }}</span></th>{% endfor %}
+      </tr></thead>
+      <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item }}</td>
+        {% for student in students %}
+        {% set fk = student.id|string + '__' + item|replace(' ','_')|replace('(','_')|replace(')','_')|replace('-','_')|replace('/','_') %}
+        {% set existing_rating = ratings_lookup.get(student.id, {}).get(item) %}
+        <td class="c">
+          <select name="{{ fk }}" class="rating-sel">
+            <option value="">—</option>
+            <option value="4" {% if existing_rating==4 %}selected{% endif %}>4 EE</option>
+            <option value="3" {% if existing_rating==3 %}selected{% endif %}>3 ME</option>
+            <option value="2" {% if existing_rating==2 %}selected{% endif %}>2 AE</option>
+            <option value="1" {% if existing_rating==1 %}selected{% endif %}>1 NMP</option>
+          </select>
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% endfor %}
+
+  <div style="display:flex;gap:10px;margin-top:4px">
+    <button type="submit" class="btn btn-g">💾 Save All Ratings</button>
+    <a href="{{ url_for('marks.index') }}" class="btn btn-o">Cancel</a>
+  </div>
+</form>
+{% endblock %}

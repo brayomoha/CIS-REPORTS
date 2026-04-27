@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Teachers{% endblock %}
+{% block topbar_title %}Teachers{% endblock %}
+{% block extra_css %}
+<style>
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:10px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-family:'DM Serif Display',serif;font-size:1.1rem;color:#002147;margin-bottom:16px}
+.stream-checkboxes{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:220px;overflow-y:auto;border:1px solid #e5e5e0;border-radius:6px;padding:10px;margin-top:4px;background:#fafaf8}
+.stream-checkboxes label{display:flex;align-items:center;gap:6px;font-size:.79rem;cursor:pointer;padding:2px 4px;border-radius:4px}
+.stream-checkboxes label:hover{background:#f0f0ec}
+</style>
+{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Teachers</h1><p>{{ teachers|length }} staff accounts</p></div>
+  <div class="ph-act">
+    <button class="btn btn-p" onclick="document.getElementById('addModal').classList.add('show')">+ Add Teacher</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Subjects</th>
+      <th>Classes</th>
+      <th class="c">Actions</th>
+    </tr></thead>
+    <tbody>
+    {% for t in teachers %}
+    <tr>
+      <td><strong>{{ t.full_name }}</strong></td>
+      <td style="font-size:.8rem;color:#666">{{ t.email }}</td>
+      <td><span class="badge b-{{ t.role }}">{{ t.role }}</span></td>
+      <td style="font-size:.78rem">
+        {% if t.subject %}
+          {% for subj in t.subject.split(',') %}
+          <span class="badge b-pending">{{ subj.strip() }}</span>
+          {% endfor %}
+        {% else %}
+          <span style="color:#aaa;font-size:.75rem">All subjects</span>
+        {% endif %}
+      </td>
+      <td style="font-size:.78rem">
+        {% if t.stream %}
+          <span class="badge b-draft">{{ t.stream.grade.name }} {{ t.stream.name }}</span>
+        {% endif %}
+        {% if t.extra_streams %}
+          {% for sid in t.extra_streams.split(',') %}
+            {% set s = streams_by_id.get(sid.strip()|int) %}
+            {% if s %}<span class="badge b-draft">{{ s.grade.name }} {{ s.name }}</span>{% endif %}
+          {% endfor %}
+        {% endif %}
+        {% if not t.stream and not t.extra_streams %}
+          <span style="color:#aaa">—</span>
+        {% endif %}
+      </td>
+      <td class="c">
+        {% set extra = t.extra_streams or '' %}
+        <button class="btn btn-o btn-xs"
+          onclick="openEdit({{ t.id }},'{{ t.full_name|replace("'","\\'") }}','{{ t.email }}','{{ t.role }}','{{ t.subject or "" }}',{{ t.stream_id or 'null' }},'{{ extra }}')">
+          ✏️ Edit
+        </button>
+        <form method="POST" action="{{ url_for('admin.delete_teacher', teacher_id=t.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Remove {{ t.full_name }}?')">
+          <button type="submit" class="btn btn-bad btn-xs">🗑 Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal" id="addModal">
+  <div class="modal-box">
+    <h3>Add Teacher</h3>
+    <form method="POST" action="{{ url_for('admin.add_teacher') }}">
+      <div class="fg"><label>Full Name</label><input type="text" name="full_name" required></div>
+      <div class="fg"><label>Login Email</label><input type="email" name="email" required placeholder="e.g. grade4red@cis.ac.ke"></div>
+      <div class="fg"><label>Password</label><input type="text" name="password" value="cis2026" required></div>
+      <div class="fg">
+        <label>Role</label>
+        <select name="role">
+          <option value="teacher">Teacher</option>
+          <option value="principal">Principal</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Subject(s) <small style="color:#aaa">— leave blank = Class Teacher (all subjects)</small></label>
+        <input type="text" name="subject" placeholder="e.g. Mathematics  or  Mathematics,Science & Technology">
+        <small style="color:#9a9a90;font-size:.72rem">Separate multiple subjects with a comma</small>
+      </div>
+      <div class="fg">
+        <label>Assigned Classes <small style="color:#aaa">— tick all classes this teacher enters marks for</small></label>
+        <div class="stream-checkboxes">
+          {% for grade in grades %}{% for stream in grade.streams %}
+          <label>
+            <input type="checkbox" name="stream_ids" value="{{ stream.id }}">
+            {{ grade.name }} {{ stream.name }}
+          </label>
+          {% endfor %}{% endfor %}
+        </div>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:12px">
+        <button type="submit" class="btn btn-p">Add Teacher</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('addModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <h3>Edit Teacher</h3>
+    <form method="POST" id="editForm">
+      <div class="fg"><label>Full Name</label><input type="text" name="full_name" id="editName" required></div>
+      <div class="fg"><label>Login Email</label><input type="email" name="email" id="editEmail" required></div>
+      <div class="fg"><label>New Password <small style="color:#aaa">(blank = keep current)</small></label><input type="text" name="password" placeholder="Leave blank to keep"></div>
+      <div class="fg">
+        <label>Role</label>
+        <select name="role" id="editRole">
+          <option value="teacher">Teacher</option>
+          <option value="principal">Principal</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Subject(s) <small style="color:#aaa">— blank = all subjects</small></label>
+        <input type="text" name="subject" id="editSubject" placeholder="e.g. Mathematics,English">
+      </div>
+      <div class="fg">
+        <label>Assigned Classes</label>
+        <div class="stream-checkboxes">
+          {% for grade in grades %}{% for stream in grade.streams %}
+          <label>
+            <input type="checkbox" name="stream_ids" value="{{ stream.id }}" class="edit-stream-cb">
+            {{ grade.name }} {{ stream.name }}
+          </label>
+          {% endfor %}{% endfor %}
+        </div>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:12px">
+        <button type="submit" class="btn btn-p">Save Changes</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('editModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function openEdit(id, name, email, role, subject, primaryStream, extraStreams) {
+  document.getElementById('editForm').action = '/admin/teachers/' + id + '/edit';
+  document.getElementById('editName').value    = name;
+  document.getElementById('editEmail').value   = email;
+  document.getElementById('editRole').value    = role;
+  document.getElementById('editSubject').value = subject;
+
+  // Build list of all assigned stream IDs
+  var allIds = [];
+  if (primaryStream) allIds.push(parseInt(primaryStream));
+  if (extraStreams) {
+    extraStreams.split(',').forEach(function(s) {
+      var n = parseInt(s.trim());
+      if (!isNaN(n)) allIds.push(n);
+    });
+  }
+
+  document.querySelectorAll('.edit-stream-cb').forEach(function(cb) {
+    cb.checked = allIds.indexOf(parseInt(cb.value)) !== -1;
+  });
+  document.getElementById('editModal').classList.add('show');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Comments — {{ student.full_name }}{% endblock %}
+{% block topbar_title %}Edit Comments{% endblock %}
+{% block extra_css %}
+<style>
+.marks-preview{font-size:.78rem}
+.marks-preview table th{font-size:.7rem;padding:6px 9px}
+.marks-preview table td{padding:6px 9px}
+.comment-suggestions{margin-top:6px}
+.suggestion-chip{display:inline-block;margin:3px 3px 3px 0;padding:4px 9px;background:#f0f0ec;border:1px solid #e8e8e2;border-radius:20px;font-size:.72rem;cursor:pointer;transition:all .15s}
+.suggestion-chip:hover{background:#002147;color:#fff;border-color:#002147}
+</style>{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>{{ student.full_name }}</h1>
+    <p>{{ student.grade.name }} {% if student.stream %}{{ student.stream.name }}{% endif %} · Term {{ active_term.term_number if active_term else '' }}</p>
+  </div>
+  <div class="ph-act">
+    <a href="{{ url_for('reports.comments_list', stream_id=student.stream_id) }}" class="btn btn-o btn-sm">← Back to List</a>
+    <a href="{{ url_for('reports.generate_one', student_id=student.id) }}" class="btn btn-g btn-sm">📄 Generate PDF</a>
+  </div>
+</div>
+
+<!-- MARKS PREVIEW -->
+{% if report_data %}
+<div class="card marks-preview">
+  <div class="card-hd"><div class="card-title">Performance Summary</div></div>
+  <div class="tw"><table>
+    <thead><tr>
+      <th>Subject</th>
+      {% for num, data in report_data.assessments.items() %}
+      {% for ass in [1,2,3] %}{% if ass == num %}
+      <th class="c">{% if num==1 %}Entry{% elif num==2 %}Mid Term{% else %}End Term{% endif %} Score</th>
+      <th class="c">Level</th>
+      {% endif %}{% endfor %}
+      {% endfor %}
+    </tr></thead>
+    <tbody>
+    {% for subject in report_data.subjects %}
+    <tr>
+      <td>{{ subject }}</td>
+      {% for num, data in report_data.assessments.items() %}
+      {% set sd = data.subjects.get(subject, {}) %}
+      <td class="c">{{ sd.get('score', '—') }}</td>
+      <td class="c">{% if sd.get('grade_code') %}<span class="badge b-{{ sd.grade_code|lower|replace('1','')|replace('2','') }}">{{ sd.grade_code }}</span>{% else %}—{% endif %}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<!-- COMMENTS FORM -->
+<div class="card">
+  <div class="card-hd"><div class="card-title">Teacher's Feedback</div></div>
+  <form method="POST">
+    <div class="fg">
+      <label>1. Learner's Performance</label>
+      <textarea name="comment_performance" rows="4" placeholder="Write about the learner's academic performance this term...">{{ rc.comment_performance or '' }}</textarea>
+    </div>
+    <div class="fg">
+      <label>2. Learner's Acquisition of Core-Competencies</label>
+      <textarea name="comment_competencies" rows="3" placeholder="Comment on communication, creativity, collaboration, critical thinking...">{{ rc.comment_competencies or '' }}</textarea>
+    </div>
+    <div class="fg">
+      <label>3. Learner's Acquisition of Values</label>
+      <textarea name="comment_values" rows="3" placeholder="Comment on respect, responsibility, integrity, patriotism...">{{ rc.comment_values or '' }}</textarea>
+    </div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button type="submit" name="action" value="save" class="btn btn-p">💾 Save Comments</button>
+      <button type="submit" name="action" value="save_next" class="btn btn-g">Save & Next Learner →</button>
+      <a href="{{ url_for('reports.comments_list', stream_id=student.stream_id) }}" class="btn btn-o">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

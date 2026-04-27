@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Comments — {{ stream.grade.name }} {{ stream.name }}{% endblock %}
+{% block topbar_title %}Teacher Comments{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>{{ stream.grade.name }} {{ stream.name }} — Comments</h1>
+    <p>{{ students|length }} learners · Click a learner to add or edit their comments</p>
+  </div>
+  <div class="ph-act">
+    <a href="{{ url_for('reports.overview') }}" class="btn btn-o btn-sm">← Back</a>
+    <a href="{{ url_for('reports.generate_stream_zip', stream_id=stream.id) }}" class="btn btn-g btn-sm">⬇️ Download All PDFs</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr>
+      <th style="width:40px">#</th>
+      <th style="min-width:200px">Learner Name</th>
+      <th>Status</th>
+      <th>Comment Preview</th>
+      <th class="c" style="width:220px">Actions</th>
+    </tr></thead>
+    <tbody>
+    {% for student in students %}
+    {% set rc = rc_by_student.get(student.id) %}
+    <tr>
+      <td style="color:#9a9a90;font-size:.78rem">{{ loop.index }}</td>
+      <td>
+        <strong>{{ student.full_name }}</strong>
+        <button class="btn btn-o btn-xs" style="margin-left:6px"
+          onclick="openNameEdit({{ student.id }}, this.dataset.name)" data-name="{{ student.full_name }}">✏️ Fix Name</button>
+      </td>
+      <td>
+        {% if rc and rc.status == 'approved' %}<span class="badge b-approved">Approved</span>
+        {% elif rc and (rc.comment_performance or rc.general_comment) %}<span class="badge b-pending">Comments Added</span>
+        {% else %}<span class="badge b-draft">Pending</span>{% endif %}
+      </td>
+      <td style="font-size:.78rem;color:#666;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        {% if rc %}{{ (rc.comment_performance or rc.general_comment or '—')[:80] }}{% else %}—{% endif %}
+      </td>
+      <td class="c">
+        {% if stream.grade.level_group == 'reception' %}
+        <a href="{{ url_for('reception.edit_comment', student_id=student.id) }}" class="btn btn-p btn-xs">✏️ Comment</a>
+        {% else %}
+        <a href="{{ url_for('reports.edit_comments', student_id=student.id) }}" class="btn btn-p btn-xs">✏️ Comments</a>
+        {% endif %}
+        <a href="{{ url_for('reports.generate_one', student_id=student.id) }}" class="btn btn-g btn-xs">📄 PDF</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- NAME EDIT MODAL -->
+<div id="nameModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <h3 style="font-family:'DM Serif Display',serif;font-size:1.1rem;color:#002147;margin-bottom:16px">Fix Learner Name</h3>
+    <form id="nameForm" method="POST">
+      <div class="fg"><label>Correct Full Name</label><input type="text" name="full_name" id="nameInput" required></div>
+      <div style="display:flex;gap:9px;margin-top:6px">
+        <button type="submit" class="btn btn-p">Save Name</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('nameModal').style.display='none'">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function openNameEdit(id, nameEl) {
+  var currentName = (typeof nameEl === 'string') ? nameEl : nameEl;
+  document.getElementById('nameForm').action = '/admin/students/' + id + '/edit-name';
+  document.getElementById('nameInput').value = currentName;
+  document.getElementById('nameModal').style.display = 'flex';
+}
+</script>
+{% endblock %}

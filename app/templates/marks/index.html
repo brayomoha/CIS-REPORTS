@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Enter Marks{% endblock %}
+{% block topbar_title %}Mark Entry{% endblock %}
+{% block content %}
+<div class="ph"><div><h1>Enter Marks</h1><p>Select an assessment and class to enter marks</p></div></div>
+
+{% if not open_assessments %}
+<div class="card"><div class="empty"><div class="ei">🔒</div><p>No assessments are currently open. Ask admin to open an assessment.</p></div></div>
+{% else %}
+{% for ass in open_assessments %}
+<div class="card">
+  <div class="card-hd">
+    <div class="card-title">{{ ass.name }} — {{ active_term.academic_year.year }}</div>
+    <span class="badge b-open">OPEN</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+    {% for stream in streams %}
+    {% if stream.grade in grades %}
+    <a href="{% if stream.grade.level_group == 'reception' and ass.number > 1 %}{{ url_for('reception.enter_skills', assessment_id=ass.id, stream_id=stream.id) }}{% elif stream.grade.level_group != 'reception' %}{{ url_for('marks.enter_marks', assessment_id=ass.id, stream_id=stream.id) }}{% else %}#{% endif %}"
+       class="btn btn-p" style="justify-content:flex-start;{% if stream.grade.level_group=='reception' and ass.number==1 %}opacity:.4;cursor:not-allowed;{% endif %}">
+      <span>{{ stream.grade.name }} {{ stream.name }}</span>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

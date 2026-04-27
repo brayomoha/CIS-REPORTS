@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Report Cards Overview{% endblock %}
+{% block topbar_title %}Report Cards{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Report Cards</h1>
+  <p>{% if active_term %}Term {{ active_term.term_number }} — {{ active_term.academic_year.year }}{% endif %}</p></div>
+  <div class="ph-act">
+    <a href="{{ url_for('reports.download_all_pdfs') }}" class="btn btn-p"
+       onclick="this.textContent='⏳ Generating...';this.style.opacity='.6'">
+      📦 Download ALL PDFs
+    </a>
+    <a href="{{ url_for('reports.download_marks_excel') }}" class="btn btn-g">
+      📊 Export Marks to Excel
+    </a>
+  </div>
+</div>
+
+{% for grade in grades %}
+<div class="card" style="margin-bottom:14px">
+  <div class="card-hd"><div class="card-title">{{ grade.name }}</div></div>
+  <div class="tw"><table>
+    <thead><tr><th>Stream</th><th>Students</th><th>Comments Done</th><th>Approved</th><th>Progress</th><th class="c">Actions</th></tr></thead>
+    <tbody>
+    {% for stream in grade.streams %}
+    {% set p = progress.get(stream.id, {}) %}
+    {% set total = p.get('total', 0) %}
+    {% set pct = ((p.get('with_comments',0) / total) * 100)|round if total > 0 else 0 %}
+    <tr>
+      <td><strong>{{ grade.name }} {{ stream.name }}</strong></td>
+      <td>{{ total }}</td>
+      <td>{{ p.get('with_comments', 0) }} / {{ total }}</td>
+      <td><span class="badge {% if p.get('approved',0) == total and total > 0 %}b-approved{% else %}b-pending{% endif %}">{{ p.get('approved', 0) }} / {{ total }}</span></td>
+      <td style="min-width:120px">
+        <div style="font-size:.72rem;color:#666;margin-bottom:3px">{{ pct }}% complete</div>
+        <div class="pbar"><div class="pfill {% if pct==100 %}green{% else %}gold{% endif %}" style="width:{{ pct }}%"></div></div>
+      </td>
+      <td class="c" style="white-space:nowrap">
+        <a href="{{ url_for('reports.comments_list', stream_id=stream.id) }}" class="btn btn-o btn-xs">💬 Comments</a>
+        <a href="{{ url_for('reports.generate_stream_zip', stream_id=stream.id) }}" class="btn btn-g btn-xs">⬇️ ZIP</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endfor %}
+{% endblock %}

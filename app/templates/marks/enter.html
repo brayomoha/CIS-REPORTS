@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Enter Marks — {{ grade.name }} {{ stream.name }}{% endblock %}
+{% block topbar_title %}{{ grade.name }} {{ stream.name }} — {{ assessment.name }}{% endblock %}
+{% block extra_css %}
+<style>
+.mark-table th{font-size:.72rem;padding:8px 10px}
+.mark-table td{padding:8px 8px}
+.score-input{width:65px;text-align:center;padding:5px 6px;font-size:.82rem}
+.student-name{font-weight:600;font-size:.83rem;min-width:160px}
+/* Sticky header fix - use position sticky with correct offset */
+.mark-table thead tr th{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:#002147;
+  box-shadow:0 2px 4px rgba(0,0,0,.15);
+}
+/* Extra top padding on table to prevent header overlap */
+.mark-table{border-collapse:separate;border-spacing:0}
+.tw{overflow-x:auto;padding-top:0}
+</style>{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>{{ grade.name }} {{ stream.name }}</h1>
+    <p>{{ assessment.name }} · {{ students|length }} learners
+    {% if teacher_subject %} · <span style="color:#C8962D;font-weight:600">{{ teacher_subject }} only</span>{% endif %}
+    </p>
+  </div>
+  <div class="ph-act">
+    <a href="{{ url_for('marks.index') }}" class="btn btn-o btn-sm">← Back</a>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('marks.save_marks') }}">
+  <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+  <input type="hidden" name="stream_id" value="{{ stream.id }}">
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tw" style="margin-top:0">
+      <table class="mark-table" style="margin-top:0">
+        <thead>
+          <tr>
+            <th style="min-width:40px">#</th>
+            <th style="min-width:165px">Learner Name</th>
+            {% for subject in allowed_subjects %}
+            <th class="c" style="min-width:80px">{{ subject }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+        {% for student in students %}
+        {% set sm = marks_lookup.get(student.id, {}) %}
+        <tr>
+          <td style="color:#9a9a90;font-size:.78rem">{{ loop.index }}</td>
+          <td class="student-name">{{ student.full_name }}</td>
+          {% for subject in allowed_subjects %}
+          {% set fk = student.id|string + '_' + subject|replace(' ','_')|replace('&','and') %}
+          {% set existing = sm.get(subject) %}
+          {% set current_val = '' %}
+          {% if existing %}
+            {% if existing.score is not none %}{% set current_val = existing.score %}
+            {% elif existing.combined_score is not none %}{% set current_val = existing.combined_score %}
+            {% elif existing.paper1_score is not none %}{% set current_val = existing.paper1_score %}
+            {% endif %}
+          {% endif %}
+          <td class="c">
+            <input type="number" class="score-input" name="{{ fk }}"
+                   min="0" max="{{ max_score }}" step="0.5"
+                   value="{{ current_val }}">
+            {% if existing and existing.grade_code %}
+            <div style="font-size:.68rem;color:#666;margin-top:2px">
+              <span class="badge b-{{ existing.grade_code|lower }}">{{ existing.grade_code }}</span>
+            </div>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:12px;padding-bottom:20px">
+    <button type="submit" class="btn btn-g">💾 Save Marks</button>
+    <a href="{{ url_for('marks.index') }}" class="btn btn-o">Cancel</a>
+  </div>
+</form>
+{% endblock %}

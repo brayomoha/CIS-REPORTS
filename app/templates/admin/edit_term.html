@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit Term Dates{% endblock %}
+{% block topbar_title %}Term Dates{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Term Dates</h1>
+  <p>These dates print on every report card PDF</p></div>
+  <div class="ph-act"><a href="{{ url_for('admin.index') }}" class="btn btn-o btn-sm">← Back</a></div>
+</div>
+
+<div class="card" style="max-width:520px">
+  <div class="card-hd"><div class="card-title">Active Term — {{ term.academic_year.year }}</div></div>
+  <form method="POST">
+    <div class="form-row">
+      <div class="fg">
+        <label>Term Number</label>
+        <select name="term_number">
+          <option value="1" {% if term.term_number==1 %}selected{% endif %}>Term 1</option>
+          <option value="2" {% if term.term_number==2 %}selected{% endif %}>Term 2</option>
+          <option value="3" {% if term.term_number==3 %}selected{% endif %}>Term 3</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="div">
+    <p style="font-size:.8rem;color:#666;margin-bottom:12px">
+      These three dates appear at the bottom of every report card:
+    </p>
+
+    <div class="fg">
+      <label>📅 Term Opening Date</label>
+      <input type="date" name="open_date"
+             value="{{ term.open_date.strftime('%Y-%m-%d') if term.open_date else '' }}">
+      <small style="color:#9a9a90;font-size:.72rem">When this term started</small>
+    </div>
+
+    <div class="fg">
+      <label>📅 Closing Date (prints on report card)</label>
+      <input type="date" name="close_date"
+             value="{{ term.close_date.strftime('%Y-%m-%d') if term.close_date else '' }}">
+      <small style="color:#9a9a90;font-size:.72rem">e.g. Tuesday 31st March, 2026</small>
+    </div>
+
+    <div class="fg">
+      <label>📅 Next Term Opening Date (prints on report card)</label>
+      <input type="date" name="next_term_date"
+             value="{{ term.next_term_date.strftime('%Y-%m-%d') if term.next_term_date else '' }}">
+      <small style="color:#9a9a90;font-size:.72rem">e.g. Monday 4th May, 2026</small>
+    </div>
+
+    <hr class="div">
+
+    <!-- Preview of how dates will appear on PDF -->
+    {% if term.close_date and term.next_term_date %}
+    <div style="background:#f4f4f0;border-radius:8px;padding:14px;margin-bottom:16px;font-size:.8rem">
+      <div style="font-weight:700;color:#002147;margin-bottom:6px">Preview — as it will appear on PDFs:</div>
+      <div style="font-family:monospace;color:#444">
+        Next term commences on: <strong>{{ term.next_term_date.strftime('%-d %B, %Y') }}</strong>
+        &nbsp;&nbsp;&nbsp;
+        Closing date: <strong>{{ term.close_date.strftime('%-d %B, %Y') }}</strong>
+      </div>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-p">💾 Save Dates</button>
+  </form>
+</div>
+{% endblock %}

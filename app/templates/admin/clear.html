@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Data Management{% endblock %}
+{% block topbar_title %}Data Management{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Data Management</h1>
+  <p>Clear marks, students or comments. These actions cannot be undone.</p></div>
+</div>
+
+<!-- CLEAR MARKS -->
+<div class="card">
+  <div class="card-hd"><div class="card-title">📊 Clear Marks</div></div>
+  <p style="font-size:.82rem;color:#666;margin-bottom:14px">
+    Remove exam scores for a specific assessment or all assessments.
+  </p>
+  <form method="POST" action="{{ url_for('admin.clear_marks') }}"
+        onsubmit="return confirm('Clear marks? This cannot be undone.')">
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>Assessment</label>
+        <select name="assessment_id">
+          {% for a in assessments %}
+          <option value="{{ a.id }}">{{ a.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>Scope</label>
+        <select name="scope">
+          <option value="assessment">Selected Assessment Only</option>
+          <option value="all">ALL Assessments</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-bad">🗑 Clear Marks</button>
+  </form>
+</div>
+
+<!-- CLEAR COMMENTS -->
+<div class="card">
+  <div class="card-hd"><div class="card-title">💬 Clear Comments</div></div>
+  <p style="font-size:.82rem;color:#666;margin-bottom:14px">
+    Remove teacher comments for a class or the whole school.
+  </p>
+  <form method="POST" action="{{ url_for('admin.clear_comments') }}"
+        onsubmit="return confirm('Clear comments? This cannot be undone.')">
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>Class</label>
+        <select name="stream_id">
+          {% for grade in grades %}{% for stream in grade.streams %}
+          <option value="{{ stream.id }}">{{ grade.name }} {{ stream.name }}</option>
+          {% endfor %}{% endfor %}
+        </select>
+      </div>
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>Scope</label>
+        <select name="scope">
+          <option value="stream">Selected Class Only</option>
+          <option value="all">ALL Classes</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-bad">🗑 Clear Comments</button>
+  </form>
+</div>
+
+<!-- CLEAR STUDENTS -->
+<div class="card" style="border:2px solid #CC0000">
+  <div class="card-hd"><div class="card-title" style="color:#CC0000">⚠️ Clear Students</div></div>
+  <p style="font-size:.82rem;color:#666;margin-bottom:14px">
+    <strong>Warning:</strong> This permanently removes students AND all their marks and comments.
+  </p>
+  <form method="POST" action="{{ url_for('admin.clear_students') }}"
+        onsubmit="return confirm('PERMANENTLY DELETE students and all their data? This CANNOT be undone!')">
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>Class</label>
+        <select name="stream_id">
+          {% for grade in grades %}{% for stream in grade.streams %}
+          <option value="{{ stream.id }}">{{ grade.name }} {{ stream.name }}</option>
+          {% endfor %}{% endfor %}
+        </select>
+      </div>
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>Scope</label>
+        <select name="scope">
+          <option value="stream">Selected Class Only</option>
+          <option value="all">ENTIRE SCHOOL</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-bad">🗑 Delete Students</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Upload Data{% endblock %}
+{% block topbar_title %}Upload Data{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Upload Data</h1>
+  <p>Import students, comments and marks from your Excel files</p></div>
+</div>
+
+<div class="sg">
+  <div class="stat green"><div class="stat-n">{{ student_count }}</div><div class="stat-l">Students in System</div></div>
+</div>
+
+<div class="card">
+  <div class="card-hd"><div class="card-title">📋 Upload Students & Comments</div></div>
+  <p style="font-size:.82rem;color:#666;margin-bottom:14px">
+    Upload your <strong>COMMENTS.xlsx</strong> file — loads all learner names, streams and teacher comments.
+  </p>
+  <form method="POST" action="{{ url_for('upload.upload_students') }}" enctype="multipart/form-data">
+    <div class="fg">
+      <label>Select COMMENTS.xlsx file</label>
+      <input type="file" name="excel_file" accept=".xlsx,.xls" required>
+    </div>
+    <button type="submit" class="btn btn-p">⬆️ Upload Students & Comments</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-hd"><div class="card-title">📊 Upload Marks</div></div>
+  <p style="font-size:.82rem;color:#666;margin-bottom:14px">
+    Upload marks Excel files one at a time. Select which assessment the file contains.
+  </p>
+  <form method="POST" action="{{ url_for('upload.upload_marks') }}" enctype="multipart/form-data">
+    <div class="form-row">
+      <div class="fg">
+        <label>Assessment</label>
+        <select name="assessment_number" required>
+          {% for ass in assessments %}
+          <option value="{{ ass.number }}">{{ ass.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="fg">
+        <label>Select Marks Excel File</label>
+        <input type="file" name="excel_file" accept=".xlsx,.xls" required>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-g">⬆️ Upload Marks</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-hd"><div class="card-title">How to Use</div></div>
+  <div style="font-size:.83rem;color:#444;line-height:2">
+    <p><strong>Step 1</strong> — Upload <code>COMMENTS.xlsx</code> first → loads all students and comments</p>
+    <p><strong>Step 2</strong> — Upload Entry Assessment Excel → select "Entry Assessment"</p>
+    <p><strong>Step 3</strong> — Upload Mid Term Excel → select "Mid Term"</p>
+    <p><strong>Step 4</strong> — Upload End Term Excel → select "End Term"</p>
+    <p style="margin-top:8px;color:#1a7a3a"><strong>Then go to Report Cards to generate PDFs</strong></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+{% block topbar_title %}Manage Students{% endblock %}
+{% block extra_css %}
+<style>.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}.modal.show{display:flex}.modal-box{background:#fff;border-radius:10px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}.modal-box h3{font-family:'DM Serif Display',serif;font-size:1.15rem;color:#002147;margin-bottom:18px}</style>
+{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Students</h1><p>{{ students|length }} learners found</p></div>
+  <div class="ph-act">
+    <button class="btn btn-p" onclick="document.getElementById('addModal').classList.add('show')">+ Add Student</button>
+    <button class="btn btn-o" onclick="document.getElementById('importModal').classList.add('show')">⬆ Import Excel</button>
+  </div>
+</div>
+
+<!-- FILTER -->
+<div class="card" style="padding:14px 18px">
+  <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+    <div class="fg" style="margin:0;flex:1;min-width:160px"><label>Filter by Grade</label>
+      <select name="grade_id" onchange="this.form.submit()"><option value="">All Grades</option>{% for g in grades %}<option value="{{ g.id }}" {% if selected_grade==g.id %}selected{% endif %}>{{ g.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="fg" style="margin:0;flex:1;min-width:160px"><label>Filter by Stream</label>
+      <select name="stream_id" onchange="this.form.submit()"><option value="">All Streams</option>{% for s in streams %}<option value="{{ s.id }}" {% if selected_stream==s.id %}selected{% endif %}>{{ s.grade.name }} {{ s.name }}</option>{% endfor %}</select>
+    </div>
+    <a href="{{ url_for('admin.students') }}" class="btn btn-o btn-sm">Clear</a>
+  </form>
+</div>
+
+<div class="card">
+  {% if students %}
+  <div class="tw"><table>
+    <thead><tr><th>Adm No.</th><th>Full Name</th><th>Grade</th><th>Stream</th><th>Gender</th><th>Parent Email</th></tr></thead>
+    <tbody>
+    {% for s in students %}
+    <tr>
+      <td style="font-family:monospace;color:#666">{{ s.admission_no }}</td>
+      <td><strong>{{ s.full_name }}</strong></td>
+      <td>{{ s.grade.name }}</td>
+      <td>{% if s.stream %}{{ s.stream.name }}{% else %}<span style="color:#ccc">—</span>{% endif %}</td>
+      <td>{{ s.gender or '—' }}</td>
+      <td style="color:#666;font-size:.78rem">{{ s.parent_email or '—' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="empty"><div class="ei">🎒</div><p>No students found. Add students or import from Excel.</p></div>
+  {% endif %}
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal" id="addModal">
+  <div class="modal-box">
+    <h3>Add New Student</h3>
+    <form method="POST" action="{{ url_for('admin.add_student') }}">
+      <div class="form-row">
+        <div class="fg"><label>Full Name</label><input type="text" name="full_name" required></div>
+        <div class="fg"><label>Admission No.</label><input type="text" name="admission_no" required></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Grade</label><select name="grade_id" required><option value="">Select Grade</option>{% for g in grades %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select></div>
+        <div class="fg"><label>Stream</label><select name="stream_id"><option value="">— None —</option>{% for s in streams %}<option value="{{ s.id }}">{{ s.grade.name }} {{ s.name }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Gender</label><select name="gender"><option value="">— Not set —</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+        <div class="fg"><label>Parent Email (optional)</label><input type="email" name="parent_email"></div>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:6px">
+        <button type="submit" class="btn btn-p">Add Student</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('addModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal" id="importModal">
+  <div class="modal-box">
+    <h3>Import Students from Excel</h3>
+    <p style="font-size:.8rem;color:#666;margin-bottom:16px">Excel columns needed: <strong>Name, Admission No, Grade, Stream, Gender, Parent Email</strong></p>
+    <form method="POST" action="{{ url_for('admin.import_students') }}" enctype="multipart/form-data">
+      <div class="fg"><label>Excel File (.xlsx)</label><input type="file" name="excel_file" accept=".xlsx,.xls" required></div>
+      <div style="display:flex;gap:9px;margin-top:6px">
+        <button type="submit" class="btn btn-p">Import</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('importModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

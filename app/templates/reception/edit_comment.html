@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Comment — {{ student.full_name }}{% endblock %}
+{% block topbar_title %}Reception Comment{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>{{ student.full_name }}</h1>
+    <p>Reception {{ student.stream.name if student.stream else '' }} · General Comment</p>
+  </div>
+  <div class="ph-act">
+    <a href="{{ url_for('reports.comments_list', stream_id=student.stream_id) }}" class="btn btn-o btn-sm">← Back</a>
+    <a href="{{ url_for('reports.generate_one', student_id=student.id) }}" class="btn btn-g btn-sm">📄 PDF</a>
+  </div>
+</div>
+
+<!-- SKILLS PREVIEW -->
+{% if sections %}
+<div class="card">
+  <div class="card-hd"><div class="card-title">Skill Ratings Summary</div></div>
+  {% for section, items in sections.items() %}
+  <div style="margin-bottom:12px">
+    <div style="font-weight:700;font-size:.8rem;color:#002147;margin-bottom:5px">{{ section }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px">
+      {% for item in items %}
+      {% set found_rating = namespace(val=none) %}
+      {% for ass_num, ratings in skills_by_assessment.items() %}
+      {% set r = ratings.get(item) %}{% if r %}{% set found_rating.val = r %}{% endif %}
+      {% endfor %}
+      <span style="font-size:.72rem;padding:2px 8px;border-radius:12px;background:#f4f4f0;color:#444">
+        {{ item }}: <strong style="color:{% if found_rating.val and found_rating.val.rating==4 %}#1a7a3a{% elif found_rating.val and found_rating.val.rating==3 %}#1a5299{% elif found_rating.val and found_rating.val.rating==2 %}#b86d00{% else %}#a01010{% endif %}">{{ found_rating.val.code if found_rating.val else '—' }}</strong>
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- COMMENT FORM -->
+<div class="card">
+  <div class="card-hd"><div class="card-title">General Comment</div></div>
+  <form method="POST">
+    <div class="fg">
+      <label>Write a general comment for {{ student.full_name }}</label>
+      <textarea name="general_comment" rows="6" placeholder="Write your general comment about the learner's overall progress, behaviour, and development this term...">{{ rc.general_comment or '' }}</textarea>
+    </div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button type="submit" name="action" value="save" class="btn btn-p">💾 Save Comment</button>
+      <button type="submit" name="action" value="save_next" class="btn btn-g">Save & Next →</button>
+      <a href="{{ url_for('reports.comments_list', stream_id=student.stream_id) }}" class="btn btn-o">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#002147">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CIS Reports">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+  </script>
+  <title>{% block title %}CIS{% endblock %} — CIS School System</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--navy:#002147;--navym:#003366;--gold:#C8962D;--goldl:#f0c96a;--white:#fff;--g100:#f4f4f0;--g200:#e8e8e2;--g400:#9a9a90;--g700:#444440;--text:#1a1a18;--ok:#1a7a3a;--warn:#b86d00;--bad:#a01010;--info:#1a5299;--r:8px;--sh:0 2px 12px rgba(0,33,71,.10);--sw:240px}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:15px}body{font-family:'DM Sans',sans-serif;background:var(--g100);color:var(--text);min-height:100vh;display:flex}
+    .sb{width:var(--sw);background:var(--navy);min-height:100vh;display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;overflow-y:auto}
+    .sb-logo{padding:20px 18px 14px;border-bottom:1px solid rgba(200,150,45,.3)}
+    .sb-name{font-family:'DM Serif Display',serif;font-size:.95rem;color:#fff;line-height:1.3}
+    .sb-tag{font-size:.62rem;color:var(--goldl);margin-top:3px;letter-spacing:.04em}
+    .sb-role{display:inline-block;margin-top:7px;padding:2px 9px;background:var(--gold);color:var(--navy);font-size:.6rem;font-weight:700;border-radius:20px;letter-spacing:.06em;text-transform:uppercase}
+    .sb-nav{flex:1;padding:8px 0}
+    .sb-sec{padding:9px 18px 3px;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+    .na{display:flex;align-items:center;gap:9px;padding:8px 18px;color:rgba(255,255,255,.7);text-decoration:none;font-size:.82rem;font-weight:500;transition:all .15s;border-left:3px solid transparent}
+    .na:hover{background:rgba(255,255,255,.07);color:#fff}.na.on{background:rgba(200,150,45,.15);color:var(--goldl);border-left-color:var(--gold)}
+    .na .ic{width:18px;text-align:center;font-size:.9rem}
+    .sb-ft{padding:12px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:.7rem;color:rgba(255,255,255,.3)}
+    .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+    .topbar{background:#fff;border-bottom:1px solid var(--g200);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .tb-title{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--navy)}
+    .tb-user{font-size:.76rem;color:var(--g700);display:flex;align-items:center;gap:7px}
+    .av{width:28px;height:28px;background:var(--navy);color:var(--goldl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700}
+    .page{padding:24px;flex:1}
+    .flashes{margin-bottom:14px}
+    .fl{padding:10px 13px;border-radius:var(--r);font-size:.82rem;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+    .f-success{background:#e8f5ec;color:var(--ok);border-left:4px solid var(--ok)}.f-warning{background:#fdf3e3;color:var(--warn);border-left:4px solid var(--warn)}
+    .f-danger{background:#fdeaea;color:var(--bad);border-left:4px solid var(--bad)}.f-info{background:#e8eef8;color:var(--info);border-left:4px solid var(--info)}
+    .card{background:#fff;border-radius:var(--r);box-shadow:var(--sh);padding:20px;margin-bottom:16px}
+    .card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:11px;border-bottom:1px solid var(--g200)}
+    .card-title{font-family:'DM Serif Display',serif;font-size:1rem;color:var(--navy)}
+    .sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:13px;margin-bottom:20px}
+    .stat{background:#fff;border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);border-top:4px solid var(--navy)}
+    .stat.gold{border-top-color:var(--gold)}.stat.green{border-top-color:var(--ok)}.stat.red{border-top-color:var(--bad)}
+    .stat-n{font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--navy)}
+    .stat-l{font-size:.7rem;color:var(--g400);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+    .tw{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.83rem}
+    th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:.74rem;letter-spacing:.03em;white-space:nowrap}
+    th.c,td.c{text-align:center}td{padding:9px 12px;border-bottom:1px solid var(--g200);vertical-align:middle}
+    tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--g100)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+    .b-ee{background:#d4edda;color:#1a7a3a}.b-me{background:#dce8f8;color:#1a5299}.b-ae{background:#fdecd8;color:#b86d00}.b-be{background:#fde8e8;color:#a01010}.b-nmp{background:#f8dede;color:#7a0f0f}
+    .b-open{background:#d4edda;color:#1a7a3a}.b-closed{background:#f0f0ec;color:var(--g400)}.b-draft{background:#f0f0ec;color:var(--g700)}.b-pending{background:#fdecd8;color:#b86d00}.b-approved{background:#d4edda;color:#1a7a3a}.b-sent{background:#dce8f8;color:#1a5299}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);font-size:.83rem;font-weight:600;cursor:pointer;text-decoration:none;border:none;transition:all .15s;font-family:inherit;line-height:1}
+    .btn-p{background:var(--navy);color:#fff}.btn-p:hover{background:var(--navym);color:#fff}
+    .btn-g{background:var(--gold);color:var(--navy)}.btn-g:hover{background:#a87620;color:#fff}
+    .btn-o{background:transparent;color:var(--navy);border:1.5px solid var(--navy)}.btn-o:hover{background:var(--navy);color:#fff}
+    .btn-ok{background:var(--ok);color:#fff}.btn-bad{background:var(--bad);color:#fff}
+    .btn-sm{padding:5px 10px;font-size:.74rem}.btn-xs{padding:3px 7px;font-size:.67rem}
+    .fg{margin-bottom:13px}
+    label{display:block;font-size:.76rem;font-weight:600;color:var(--g700);margin-bottom:4px}
+    input[type=text],input[type=email],input[type=password],input[type=number],select,textarea{width:100%;padding:7px 10px;border:1.5px solid var(--g200);border-radius:var(--r);font-size:.83rem;font-family:inherit;color:var(--text);background:#fff;transition:border-color .15s}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,33,71,.07)}
+    textarea{resize:vertical;min-height:80px}
+    .form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px}
+    .pbar{background:var(--g200);border-radius:4px;height:6px;overflow:hidden;margin-top:3px}
+    .pfill{height:100%;border-radius:4px;background:var(--navy);transition:width .3s}.pfill.gold{background:var(--gold)}.pfill.green{background:var(--ok)}
+    .ph{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .ph h1{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--navy);line-height:1.2}
+    .ph p{color:var(--g400);font-size:.83rem;margin-top:3px}.ph-act{display:flex;gap:8px;flex-shrink:0}
+    hr.div{border:none;border-top:1px solid var(--g200);margin:16px 0}
+    .empty{text-align:center;padding:44px 20px;color:var(--g400)}.empty .ei{font-size:2.2rem;margin-bottom:10px}.empty p{font-size:.88rem}
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="sb-name">Creative Integrated School</div>
+    <div class="sb-tag">★ Kindergarten ★ Primary ★ Junior</div>
+    {% if session.teacher_role %}<span class="sb-role">{{ session.teacher_role }}</span>{% endif %}
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Main</div>
+    <a href="{{ url_for('main.dashboard') }}" class="na {% if request.endpoint=='main.dashboard' %}on{% endif %}"><span class="ic">🏠</span> Dashboard</a>
+    {% if session.teacher_role in ['admin','principal'] %}
+    <div class="sb-sec">Management</div>
+    <a href="{{ url_for('admin.index') }}" class="na {% if request.endpoint=='admin.index' %}on{% endif %}"><span class="ic">📊</span> Overview</a>
+    <a href="{{ url_for('admin.teachers') }}" class="na {% if request.endpoint=='admin.teachers' %}on{% endif %}"><span class="ic">👩‍🏫</span> Teachers</a>
+    <a href="{{ url_for('admin.students') }}" class="na {% if request.endpoint=='admin.students' %}on{% endif %}"><span class="ic">🎒</span> Students</a>
+    <a href="{{ url_for('admin.edit_term') }}" class="na {% if request.endpoint=='admin.edit_term' %}on{% endif %}"><span class="ic">📅</span> Term Dates</a>
+    <a href="{{ url_for('admin.streams') }}" class="na {% if request.endpoint=='admin.streams' %}on{% endif %}"><span class="ic">🏫</span> Streams</a>
+    <a href="{{ url_for('upload.index') }}" class="na {% if request.blueprint=='upload' %}on{% endif %}"><span class="ic">⬆️</span> Upload Data</a>
+    {% if session.get('role') in ['admin','principal'] %}
+    <a href="{{ url_for('admin.clear_page') }}" class="na {% if request.endpoint=='admin.clear_page' %}on{% endif %}" style="color:#CC0000"><span class="ic">🗑</span> Clear Data</a>
+    {% endif %}
+    {% if session.get('role') == 'teacher' %}
+    <a href="{{ url_for('admin.my_class') }}" class="na {% if request.endpoint=='admin.my_class' %}on{% endif %}"><span class="ic">🏫</span> My Class</a>
+    {% endif %}
+    {% endif %}
+    <div class="sb-sec">Assessments</div>
+    <a href="{{ url_for('marks.index') }}" class="na {% if request.blueprint=='marks' %}on{% endif %}"><span class="ic">✏️</span> Enter Marks</a>
+    {% if session.get('role') == 'teacher' %}
+    <a href="{{ url_for('admin.my_class') }}" class="na {% if request.endpoint=='admin.my_class' %}on{% endif %}"><span class="ic">🏫</span> My Class</a>
+    {% endif %}
+    <a href="{{ url_for('reports.overview') }}" class="na {% if request.blueprint=='reports' %}on{% endif %}"><span class="ic">📄</span> Report Cards</a>
+    <div class="sb-sec">Account</div>
+    <a href="{{ url_for('auth.change_password') }}" class="na"><span class="ic">🔑</span> Change Password</a>
+    <a href="{{ url_for('auth.logout') }}" class="na"><span class="ic">🚪</span> Logout</a>
+  </nav>
+  <div class="sb-ft">CIS School System © 2026</div>
+</aside>
+<div class="main">
+  <header class="topbar">
+    <div class="tb-title">{% block topbar_title %}CIS School System{% endblock %}</div>
+    <div class="tb-user">
+      {% if session.teacher_name %}<div class="av">{{ session.teacher_name[0] }}</div><span>{{ session.teacher_name }}</span>{% endif %}
+    </div>
+  </header>
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flashes">{% for cat,msg in messages %}<div class="fl f-{{ cat }}">{% if cat=='success' %}✅{% elif cat=='warning' %}⚠️{% elif cat=='danger' %}❌{% else %}ℹ️{% endif %} {{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

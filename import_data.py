@@ -1,0 +1,4947 @@
+"""
+CIS School System - Import Students & Comments
+================================================
+Run this ONCE from the project root to:
+  1. Import all ~437 students from your Excel files
+  2. Load all teacher comments directly into the database
+
+Usage:
+    python import_data.py
+"""
+
+import sys, os
+from app import create_app
+from app.models import db, Grade, Stream, Student, Term, ReportCard
+
+# ── ALL STUDENT + COMMENT DATA ───────────────────────────────────────────────
+IMPORT_DATA = {
+  "PP2": {
+    "comments": [
+      {
+        "name": "Abiah Kyla Gacoya",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Abiah Kayla is a calm, attentive and well-behaved learner who participates actively in class activities. Her handwriting has greatly improved and she completes both her classwork and homework diligently. She experiences difficulty in reading fluency and comprehending longer texts, and requires more practice in summarizing and retelling stories. With continued support and practice, she will make good progress. She has shown improvement in her end of term assessment.",
+        "competencies": "She participates actively during learning activities, which promotes communication skills.",
+        "values": "She is a disciplined learner who follows instructions appropriately."
+      },
+      {
+        "name": "Ace Odari",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Ace Odari is a calm, well-behaved and responsible learner who ensures he completes his tasks. His reading fluency has greatly improved, though he still requires more practice to improve his handwriting. He follows instructions well and has shown improvement in his end of term assessment. With continued support, he will make good progress.",
+        "competencies": "He responds appropriately to instructions during learning activities, which promotes self-management skills.",
+        "values": "He is a disciplined learner who follows instructions appropriately."
+      },
+      {
+        "name": "Aidan Noah",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Aidan is an organized, cooperative and intelligent learner. He reads very well and takes pride in accomplished tasks in and out of class. His writing skills are coming up and with encouragement and practice he will improve.",
+        "competencies": "Aidan has really improved in his relations with his peers. He can name friends by name and talk about them thus promoting communication and collaboration.",
+        "values": "He is an honest and loving learner."
+      },
+      {
+        "name": "Anna Makayler",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Anna is an out - spoken and determined learner. Her performance in handwriting activities is very good and she relates well with her peers. she is having challenges in reading and needs a lot of practice to improve on her comprehension and understanding of words.",
+        "competencies": "She is friendly and relates well with others as they interact. She is an enthusiastic learner during the learning process and enjoys working with others. This enhances communication and collaboration skills.",
+        "values": "She works peacefully without disrupting other learners. she is obedient and polite. this promotes love and unity."
+      },
+      {
+        "name": "Archie Ndarua",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Archie is a calm and neat learner. His writing skills are highly commendable. His reading skills are gradually improving, we will provide more guidance and practice to improve his literacy skills",
+        "competencies": "He responds appropriately instructions given and participates in class activities by attempting to answer both oral and written questions. He enjoys participating in outdoor activities.",
+        "values": "He has evidently shown leadership skills displaying citizenship by how he works with his peers."
+      },
+      {
+        "name": "Ayira Wanzila",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Ayira is a mindful and courteous learner to both the teachers and her peers. She expresses herself effectively. She performs well in oral interactions and reading skills. She needs more practice in her writing skills.",
+        "competencies": "She enjoys using a tablet in doing activities such as solving puzzles and listening to short stories to improve her oral fluency which promotes digital literacy.",
+        "values": "She enjoys using a tablet in doing activities such as solving puzzles and listening to short stories to improve her oral fluency which promotes digital literacy."
+      },
+      {
+        "name": "Brayden Mwendwa",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Brayden is a kind, confident and well-behaved learner who approaches his tasks with ease. He completes his work promptly and ensures he finishes what he starts. His reading has greatly improved and his handwriting has also shown good progress. He has performed well in his end of term assessment.",
+        "competencies": "He expresses his ideas confidently during learning activities, which promotes communication skills.",
+        "values": "He is a polite and responsible learner who uses respectful language when interacting with others."
+      },
+      {
+        "name": "Brianna Hadassah",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Brianna is a responsible and cheerful learner who keeps her belongings well organized. She is well spoken and has shown great improvement in her handwriting. She completes both her classwork and homework diligently and has improved in her end of term assessment. She also participates actively in co-curricular activities such as swimming. She has performed well this term.",
+        "competencies": "She confidently expresses herself during learning activities, which promotes communication skills.",
+        "values": "She is a caring and cooperative learner who enjoys sharing with others."
+      },
+      {
+        "name": "Brielle Wanjiru",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Brielle is a kind and cooperative learner who follows instructions well. She reads well and has shown improvement in her handwriting. She completes her classwork and homework diligently and has improved in her end of term assessment. She sometimes experiences difficulty in speech and expressing herself, however, with continued support she will improve.",
+        "competencies": "She participates in class activities and is gradually gaining confidence in expressing herself, which promotes communication skills.",
+        "values": "She is a respectful learner who relates well with others."
+      },
+      {
+        "name": "Cherub Ursla",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Cherub is a cooperative, independent and intelligent learner. She responds appropriately to simple instructions. She performs her classroom tasks under minimal supervision. She has commendably improved in her reading fluency and handwriting. Keep it up!",
+        "competencies": "She is friendly and embraces new ideas by asking and responding to questions. This encourages learning to learn.",
+        "values": "She is an obedient learner and always observes simple instructions. This enhances desirable responsibility in and out of class."
+      },
+      {
+        "name": "Darius Waweru Gatemba",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Darius is a quiet, calm and organized learner who takes care of his belongings. He has shown improvement in his reading and is making steady progress. He still requires more practice to improve his handwriting and clarity in speech, and needs support to express himself more confidently. He requires close supervision to complete his tasks, and with continued guidance he is learning to share with others. He has shown great improvement in his end of term assessment.",
+        "competencies": "He participates in learning activities with guidance and is gradually building confidence in expressing himself, which promotes communication skills.",
+        "values": "He is a calm and responsible learner."
+      },
+      {
+        "name": "Domani Shiwa Odhiambo",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Domani is a highly inquisitive and enthusiastic learner who shows a strong desire to learn new things. His reading fluency has commendably improved and his handwriting has also shown gradual improvement. He completes his work diligently and takes responsibility for his tasks. He has performed well this term.",
+        "competencies": "He asks questions and actively engages during learning activities, which promotes learning to learn.",
+        "values": "He is a cooperative learner who is always willing to share with others"
+      },
+      {
+        "name": "Dylan Kai",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Dylan is a confident, responsible and well-behaved learner who approaches his tasks with ease. He reads very well and has excellent handwriting, presenting his work neatly. He completes both his classwork and homework on time and works quickly and efficiently. He should be more cautious when answering questions, especially during assessments, to avoid making avoidable mistakes. With this, he will continue to perform very well.",
+        "competencies": "He supports his peers by helping them understand concepts, which promotes collaboration.",
+        "values": "He is a cooperative and helpful learner who relates well with others."
+      },
+      {
+        "name": "Eleanor Waithira",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Eleanor is an out – spoken, Informed and cooperative learner. She observes simple instructions and follows the classroom rules. She works independently and her performance in class is very good. She is encouraged to be exposed to more reading materials to improve on her reading fluency.",
+        "competencies": "She is friendly and shows empathy to her peers and is always ready to give a hand. She is independent and always responds positively to instructions given.",
+        "values": "She is a remarkably considerate learner. She relates well with everyone in and out of class promoting love and unity."
+      },
+      {
+        "name": "Elina Wanja",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Elina is a calm, organized and well-behaved learner who participates actively in class activities. She has good handwriting and keeps her work neat and well arranged. She is still developing her reading skills and requires more practice to improve her fluency. Regular reading of simple storybooks at home and in school will help build her confidence and understanding. She follows classroom instructions well, though she should be encouraged to complete her homework consistently.",
+        "competencies": "She participates actively in learning activities, which promotes self-efficacy.",
+        "values": "She is a kind and cooperative learner who enjoys sharing with others."
+      },
+      {
+        "name": "Ellagrace Nyambura",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Ellagrace is an intelligent and sociable learner. She works independently and completes her work on time. Both her reading and writing skills is commendable.",
+        "competencies": "She participates actively by engaging herself during creative activities such as drawing and colouring",
+        "values": "She relates peacefully and cooperates in class."
+      },
+      {
+        "name": "Emmanuel Jesse",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Emmanuel is a hardworking, independent and intelligent learner. He has worked encouragingly well throughout the term and his relationship with other learners is very good. He does his tasks and assignments diligently. His reading and writing skills are good.",
+        "competencies": "He relates well with learners both in and out of class this promotes communication and collaboration.",
+        "values": "He has evidently shown leadership skills displaying citizenship by how he works with his peers."
+      },
+      {
+        "name": "Gabriel Kiama",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Gabriel is an energetic and playful learner who enjoys engaging in activities. He reads well and completes both his classwork and homework. He still requires more practice to improve his handwriting. He may lose concentration easily and needs close supervision to complete his tasks, however, with continued guidance he is improving. He has performed well in his end of term assessment.",
+        "competencies": "He participates in class activities and is learning to stay focused, which promotes self-management skills.",
+        "values": "He is learning to follow instructions and classroom routines with guidance."
+      },
+      {
+        "name": "Gathura Gathura",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Gathura is a confident and active learner. He has a good understanding of concepts introduced and approaches tasks with confidence. His reading fluency is very good. He needs more practice and guidance on handwriting skills",
+        "competencies": "He is an open-minded learner who takes pride in participating in challenging tasks, seeking solutions and clarifications. This promotes learning to learn, critical thinking and problem -solving skills.",
+        "values": "He shows empathy towards others and will help anyone if they need it. This promotes love and unity."
+      },
+      {
+        "name": "Grace Njeri",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Grace is an intelligent, neat and self-reliant learner. she completes her work in good time and takes pride in work well done. Her performance in both reading and writing skills is impressive. Good job!",
+        "competencies": "She participates actively in class activities and discussions by taking up the role of a leader and gives instructions to her peers as they work together which promotes communication and collaboration.",
+        "values": "She is a kind, peaceful and responsible learner."
+      },
+      {
+        "name": "Hansel Wanjohi",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Hansel is a polite and determined learner. We shall do more practice and guidance to better his writing skills. His interactions in class are very good. He faces challenges with blending words and reading fluency. To enhance his literacy skills, consistent practice both at home and at school will be beneficial. continued support and encouragement will boost his progress.",
+        "competencies": "He relates well with his peer’s enhancing communication and collaboration amongst learners.",
+        "values": "He is determined and respectful towards everyone he interacts with displaying self -discipline."
+      },
+      {
+        "name": "Hazel Muthoni",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Hazel is an outspoken and confident learner who communicates clearly. She reads very well and is able to handle books beyond her level. Her handwriting is neat and she completes both her classwork and homework diligently. She also performs very well in co-curricular activities, especially swimming, and has performed commendably well in her end of term assessment.",
+        "competencies": "She expresses her ideas clearly during learning activities, which promotes communication skills.",
+        "values": "She is a respectful learner who uses polite language when interacting with others."
+      },
+      {
+        "name": "Ian Kingsley Kibe",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Ian Kingsley is an active and outspoken learner who participates well in class discussions. He reads well and completes his homework consistently. He still requires more practice to improve his handwriting and letter formation. He has a short attention span and at times needs close supervision to complete his tasks, however, with continued guidance he will make good progress.",
+        "competencies": "He expresses his ideas confidently during learning activities, which promotes communication skills.",
+        "values": "He is an obedient learner who listens to instructions."
+      },
+      {
+        "name": "Jude Jabari",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Jabari is a diligent and determined learner. He has shown great improvement in his reading skills in class. He needs more practice and engagement to improve in his writing skills.",
+        "competencies": "He is an inquisitive learner as he asks questions during learning experiences which promotes communication and collaboration.",
+        "values": "He is a loving and kind learner. He needs to improve on completing tasks given."
+      },
+      {
+        "name": "Kaila Wael",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Kaila Wael is a well-disciplined, organized and active learner who participates well in class activities. She reads well and has shown noticeable improvement in her handwriting. She also demonstrates creativity in her artwork and enjoys exploring different materials and techniques. She has shown improvement in her end of term assessment and has performed well this term.",
+        "competencies": "She participates actively in creative activities, which promotes creativity and imagination.",
+        "values": "She is a responsible learner who keeps her work organized and follows instructions appropriately."
+      },
+      {
+        "name": "Katya Wambui",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Katya is a brilliant, active and self- motivated learner. Her reading fluency is commendable and her handwriting has gradually improved. More practice and encouragement will help enhance her writing skills.",
+        "competencies": "She does her classwork with less supervision. she is working on completing tasks on time. This promotes independence and self-discipline.",
+        "values": "Katya take classroom activities seriously demonstrating responsibility when completing them."
+      },
+      {
+        "name": "KellySasha wanjiku",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Kellysasha is a dedicated and active learner who consistently demonstrates enthusiasm for learning. She has shown remarkable growth in her independence, completing her classwork with minimal supervision. Notable progress has been observed in her reading and writing skills. He is encouraged to be exposed to more reading materials to improve his reading fluency.",
+        "competencies": "She has shown strong communication and collaboration skills engaging actively with her peers and teachers in discussions. Her sociable nature allows him to foster positive relationships.",
+        "values": "She is respectful and responsible especially during co-curricular activities."
+      },
+      {
+        "name": "Latifah Zawadi",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Latifa is a well-disciplined, polite and confident learner who participates actively in class activities. She reads well and has good handwriting, presenting her work neatly. She completes both her classwork and homework diligently. She has performed well in her end of term assessment. Well done.",
+        "competencies": "She expresses her ideas confidently during learning activities, which promotes communication skills.",
+        "values": "She is a respectful learner who uses polite language when interacting with others."
+      },
+      {
+        "name": "Laura Rose Atara",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Atara is a calm and composed learner. She relates amicably with peers both in and out of class. Her performance is encouragingly coming up both in her reading and writing activities.",
+        "competencies": "She enjoys using a tablet in doing different activities such as matching and paring objects and typing numbers. She also seeks clarifications on concepts not well understood.",
+        "values": "She is a kind, responsible, respectful and a co-operative learner especially during group work and co-curricular activities such as swimming."
+      },
+      {
+        "name": "Lenny Ngigi",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Lenny is a brilliant, committed and cooperative learner. He has shown great progress in his reading fluency. We will provide more practice, guidance and encouragement to improve his writing skills.",
+        "competencies": "He engages in class activities by asking questions regularly even after learning experiences. He enjoys participating in co-curricular activities such as playing football.",
+        "values": "Lenny is agreeable and polite when working with others."
+      },
+      {
+        "name": "Miguel Mwangi",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Miguel is a brilliant, committed and cooperative learner. He has shown great progress in his reading fluency. We will provide more practice, guidance and encouragement to improve his writing skills.",
+        "competencies": "He engages in class activities by asking questions regularly even after learning experiences. He enjoys participating in co-curricular activities such as playing football.",
+        "values": "Miguel is agreeable and polite when working with others."
+      },
+      {
+        "name": "Mike Jayden",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Jayden is brilliant, energetic and outspoken learner. He has shown remarkable improvement in both reading and handwriting activities. More guidance and practice will be done to improve on his writing skills.",
+        "competencies": "He is open minded to new ideas and suggestions and enjoys giving and sharing his ideas. He always seeks assistance and where he fails to get the concept properly. This enhances communication and collaboration.",
+        "values": "He is a polite and kind learner. He enjoys working with others and likes sharing his property by assisting others. this promotes love and unity."
+      },
+      {
+        "name": "Nathan Waiganjo",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Nathan is an energetic and active learner who enjoys engaging in practical activities such as colouring, painting and matching patterns. He is able to complete simple tasks when guided and shows interest in classroom activities. He requires close supervision to remain focused and needs continued support to improve his communication skills. With consistent guidance, he will make good progress.",
+        "competencies": "He participates in creative activities when guided, which promotes creativity and imagination.",
+        "values": "He is learning to follow instructions during classroom activities with guidance."
+      },
+      {
+        "name": "Nile Wanjama",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Nile is a calm and playful learner who enjoys engaging in activities. He has shown improvement in his reading and is making steady progress. He experiences difficulty in writing due to difficulty in pencil grip and requires close supervision to complete his tasks. Regular practice in fine motor activities such as tracing, colouring and moulding will help strengthen his pencil grip and improve his writing skills. He keeps his belongings well organized and has shown great improvement in his end of term assessment.",
+        "competencies": "He participates in learning activities when guided, which promotes self-management skills.",
+        "values": "He is a responsible learner who keeps his belongings well organized."
+      },
+      {
+        "name": "Nova Waithera",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Nova is a well-behaved, confident and active learner who participates well in class activities. She reads well and her handwriting has greatly improved. She completes both her classwork and homework diligently and answers questions confidently. She has performed well this term.",
+        "competencies": "She expresses her ideas confidently during learning activities, which promotes communication skills.",
+        "values": "She is a cooperative learner who enjoys sharing with others and follows instructions appropriately."
+      },
+      {
+        "name": "Olivia Wanjiru Kemboi",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Olivia is a mindful and courteous learner to both the teachers and her peers. She expresses herself effectively. She performs well in oral interactions and reading skills. She needs more practice in her writing skills.",
+        "competencies": "She enjoys using a tablet in doing activities such as solving puzzles and listening to short stories to improve her oral fluency which promotes digital literacy.",
+        "values": "She is considerate when interacting with the teacher and her peers."
+      },
+      {
+        "name": "Shanaya Muthoni",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Shanaya is an outspoken and neat learner who participates actively in all class activities.She completes her work diligently and takes pride in her work. She has performed remarkably well this term. Well done and keep it up.",
+        "competencies": "She confidently expresses her ideas during learning activities and participates actively in class discussions. This enhances communication and collaboration.",
+        "values": ""
+      },
+      {
+        "name": "Shiloh Mali",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "",
+        "competencies": "",
+        "values": ""
+      },
+      {
+        "name": "Sky Muriu",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "He is an active and energetic learner who engages in class activities. He has shown noticeable improvement in his handwriting and is gradually improving in his reading. He gets distracted easily hence he requires guidance to remain focused on tasks. He also needs to improve on organization and taking care of his belongings. With continued guidance and support, he will make good progress. He has shown great improvement in his end of term exam. Well done",
+        "competencies": "He participates in class activities and is gradually learning to stay focused, which promotes self-management skills.",
+        "values": "He is learning to be responsible and take better care of his belongings."
+      },
+      {
+        "name": "Taji Mbinda Maingi",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Taji is a calm, reserved and attentive learner who follows instructions well. He reads well but requires more practice to improve his handwriting. He experiences some difficulty in completing tasks on time and may get easily distracted, however, with continued support he is learning to stay focused. He has shown great improvement in his end of term assessment.",
+        "competencies": "He responds appropriately to instructions and is gradually improving in managing his tasks, which promotes self-management skills.",
+        "values": "He is a disciplined learner who follows instructions appropriately."
+      },
+      {
+        "name": "Tendai Aska Son",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Tendai is an intelligent, observant and mindful learner. She has shown impressive progress in her reading and writing activities. She completes her work in good time and presents good and neat work.",
+        "competencies": "She participates actively in class by engaging in creative activities such as drawing and colouring. This promotes self-efficacy, creativity and imagination.",
+        "values": "She is a responsible and peaceful learner."
+      },
+      {
+        "name": "Thayu  Matalanga",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Thayu is a well-behaved, outspoken and inquisitive learner who participates actively in class. He reads well and his handwriting has greatly improved. He shows a strong interest in creative activities and confidently shares his ideas during learning experiences. He follows instructions well and has performed commendably in his end of term assessment.",
+        "competencies": "He asks questions and shares his ideas confidently during learning activities, which promotes learning to learn.",
+        "values": "He is a respectful learner who is keen on using polite language when interacting with others"
+      },
+      {
+        "name": "Theo Gikonyo",
+        "stream": "RED",
+        "teacher": "TR.NJAMBI",
+        "performance": "Theo is a hardworking, independent and intelligent learner. He has worked encouragingly well throughout the term and his relationship with other learners is very good. He does his tasks and assignments diligently. His reading and writing skills are good.",
+        "competencies": "He relates well with learners both in and out of class this promotes communication and collaboration",
+        "values": "He has evidently shown leadership skills displaying citizenship by how he works with his peers."
+      },
+      {
+        "name": "Zoey Grace Ngonyo",
+        "stream": "YELLOW",
+        "teacher": "TR.JOY",
+        "performance": "Zoey is an energetic learner who shows enthusiasm in class. She reads well and is gradually improving her handwriting. She enjoys participating in creative activities and piano classes. She has a short concentration span and requires close supervision to complete her tasks. Her speech is still developing, but she is showing steady improvement. With continued support and guidance, she will make good progress. She has performed remarkably well this term. Good job.",
+        "competencies": "She participates in learning activities when guided, which promotes self-management skills.",
+        "values": "Zoey is a lively learner who responds well to instructions when supported. She is making steady progress in following routines and completing tasks responsibly."
+      }
+    ],
+    "marks_students": []
+  },
+  "PP1": {
+    "comments": [
+      {
+        "name": "ACE NJOROGE",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Ace is hardworking, helpful and confident learner. He has shown great improvement in writing skills. He interacts positively with other peers. More attention is needed to improvement his reading fluency.",
+        "competencies": "Ace is always curious and eager to learn new concepts.",
+        "values": "Ace is peaceful and loving."
+      },
+      {
+        "name": "ALOYSIA  UTUGI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Aloysia is a self-intelligent and motivated learner. She demonstrates excellent writing skills and produces neat well organized work. She reads age appropriate materials well and interacts positively well with peers. Completes classwork on time.",
+        "competencies": "Aloysia demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "Aloysia is kind and obedient learner."
+      },
+      {
+        "name": "Alph Karari",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Alph is an energetic and lively learner who enjoys engaging in class activities and play based learning. He is gradually improving in recognizing sounds numbers and simple instructions. Alph is encouraged to remain attentive during lessons and complete tasks with greater focus to enhance his academic progress. He enjoys participating in skating where he shows into CSM and developing coordination skills.",
+        "competencies": "He listens carefully and responds meaningfully during lessons",
+        "values": "He is loving and obedient learner."
+      },
+      {
+        "name": "AMARI KINGI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Amari is an active, helpful and confident learner. He has shown advanced writing ability and pays attention to detail. Reading skills are developing as expected, interacts respectfully with peers and finishes work on time.",
+        "competencies": "Amari is always curious and eager to learn new concepts.",
+        "values": "He is loving and obedient learner."
+      },
+      {
+        "name": "AYANNA  WAITHIRA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Ayanna is an active, helpful and confident learner. She has shown advanced writing ability and pays attention to detail. Her reading skills are developing as expected, interacts respectfully with peers and finishes work on time.",
+        "competencies": "Ayanna is always curious and eager to learn new concepts.",
+        "values": "She is loving and obedient learner."
+      },
+      {
+        "name": "Aydn Sanyaolu",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Aydn is an intelligent and motivated learner who demonstrates strong understanding of  sounds and number concepts. He has settled in well, works independently and contributes actively to both class and co-curricular activities. Great improvement noted in reading fluency.",
+        "competencies": "Aydn applies logical and creative thinking when approaching new tasks and expresses his thoughts clearly in both speech and writing.",
+        "values": "He is considerate and caring, showing genuine respect and interest during moral and religious lessons."
+      },
+      {
+        "name": "BRIA NJERI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Bria is an active, helpful and confident learner. She has shown advanced writing ability and pays attention to detail. Her reading skills are developing as expected, interacts respectfully with peers and finishes work on time.",
+        "competencies": "She expresses ideas clearly, confidently and shows positivity when learning new skills.",
+        "values": "Bria is kind and obedient learner."
+      },
+      {
+        "name": "Calvin Kariuki",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Calvin is a friendly active and cooperative learner who enjoys participating in class and outdo activities he shows steady progress in developing his early Reading writing and counting skills and completes most of his tasks with guidance. Calvin is encouraged to practice neatness and patience while completing tasks to improve the quality of his work. He enjoys participating in skating where he displays into enthusiasm and good coordination.",
+        "competencies": "He listens carefully and responds meaningfully during lessons",
+        "values": "He is loving and obedient learner."
+      },
+      {
+        "name": "Cara Simantei",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Cara is a determined and informed learner who works well independently. She has settled in very well. She continues to make impressive progress in reading fluency sounds and number formation. She enjoys swimming and outdoor activities.",
+        "competencies": "She expresses ideas clearly, confidently and shows positivity when learning new skills.",
+        "values": "Cara is kind and respectful, participating thoughtfully in class prayers and discussions."
+      },
+      {
+        "name": "CHRISTIAN KARIUKI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Christian is pleasantly hardworking and confident learner. He has shown great excellent writing skills and expresses ideas clearly. Interacts well with peers and completes assigned work on time. He has shown great improvement in the reading fluency.",
+        "competencies": "He listens carefully and responds meaningfully during lessons",
+        "values": "He is kind and loving learner."
+      },
+      {
+        "name": "CHRISTIAN NGANGA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Christian is pleasantly hardworking and confident learner. He has shown great excellent writing skills and expresses ideas clearly. Interacts well with peers and completes assigned work on time. He has shown great improvement in the reading fluency.",
+        "competencies": "Christian demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "Christian is honest, responsible and respectful learner."
+      },
+      {
+        "name": "Ethan Mwangi",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Ethan is an active and determined learner who engages actively in class. He is improving well in reading fluency, sounds and number formation. He enjoys swimming and outdoor activities. writing.",
+        "competencies": "He listens carefully and responds meaningfully during lessons",
+        "values": "Ethan expresses gratitude readily and treats others with kindness and respect."
+      },
+      {
+        "name": "EZRA  MUNGAI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Ezra is an active and determined learner who engages actively in class. He is improving well in reading fluency, sounds and number formation. He enjoys swimming and outdoor activities. writing.",
+        "competencies": "Ezra enjoys using tablets during class activities in practicing activities such as drawing, matching and pairing.",
+        "values": "Ezra is kind and loving learner."
+      },
+      {
+        "name": "HAZEL KENDI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Hazel is a keen and active learner. She has shown excellent mastery in writing activities. Reading ability is satisfactory, maintains friendly peer relationship and completes tasks with minimal supervision. Needs to be exposed to more reading.",
+        "competencies": "Hazel curiosity seeks assistance and guidance for clarification of concepts not understood by asking and responding to questions in learning activities.",
+        "values": "Hazel is honest, caring and obedient learner."
+      },
+      {
+        "name": "HELSA  NATALIE",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Natalie is an attentive and self-driven learner. She has shown a strong writing competence and produces neat written work. She interacts well with other peers and manages classroom tasks within time. Her reading fluency needs more reinforcement.",
+        "competencies": "Natalie applies classroom knowledge mean fully in daily learning situations.",
+        "values": "Natalie is kind and respectful learner."
+      },
+      {
+        "name": "ISHMAEL JABULUM",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Ishmael is jovial and active learner. He reads fluently. He writes a few sounds with support and recognizes most of the sounds. He interacts positively with other peers. More support is needed to improve his writing skill.",
+        "competencies": "Ishmael demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "Ishmael is honest and caring learner."
+      },
+      {
+        "name": "Isla Makena",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Isla is an active and cheerful learner. She enjoys participating in classroom activities. She has shown steady progress in sound and number recognition. More practice needed to improve her reading fluency, sounds and number formation. She participate actively in ballet where she demonstrates Grace discipline and creativity.",
+        "competencies": "She listens attentively and participates actively in class and outdoor sessions.",
+        "values": "She is kind and responsible, showing reverence and attentiveness during class prayers and Bible stories."
+      },
+      {
+        "name": "Ittai Amani",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Kylian is a responsible and committed learner who gives his best effort in all activities.",
+        "competencies": "His creativity and digital literacy are growing consistently.",
+        "values": "Ittai demonstrates respect and focus during spiritual activities."
+      },
+      {
+        "name": "Ivannah Wambui",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Ivannah is a pleasant and motivated learner who demonstrates a positive attitude towards learning. She is self-driven and treats her peers with warmth and compassion. She has shown a remarkable progress in reading fluency, sou",
+        "competencies": "She listens attentively and participates actively in class and outdoor sessions.",
+        "values": "Ivannah is obedient and respectful, showing willingness during religious and moral lessons."
+      },
+      {
+        "name": "JABALI TURING",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Jabali is attentive and organized learner. He works smart in class and has excellent handwriting. His reading skills are on target, participates actively with peers and completes work neatly.",
+        "competencies": "Jabali shows imagination and innovation in practical activities during learning process.",
+        "values": "Jabali is kind and respectful learner."
+      },
+      {
+        "name": "Jeanette Njeri",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Jeanette is a polite and diligent learner who demonstrates consistent effort and good manners. Her reading fluency, sounds and number formation have improved greatly",
+        "competencies": "She maintains a positive attitude toward learning and developing new abilities.",
+        "values": "Jeanette regularly expresses gratitude and shows kindness to peers and teachers."
+      },
+      {
+        "name": "JENSEN TARAJI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Jensen is an active, helpful and confident learner. He is an attentive learner who has shown a solid improvement in reading and writing. He socializes positively with other peers and completes work consistently.",
+        "competencies": "Jensen demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "Jensen is kind, responsible and respectful."
+      },
+      {
+        "name": "Jevin Lbarunye",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Jevin is a brilliant and attentive learner. He has shown remarkable progress in reading fluency, sounds and number formation. He needs more work in speech development through socialization. He continues to make strong progress in outdoor activities",
+        "competencies": "Jevin is a brilliant and attentive learner. He has shown remarkable progress in reading fluency, sounds and number formation. He needs more work in speech development through socialization. He continues to make strong progress in outdoor activities",
+        "values": "He is kind, respectful, and environmentally conscious, showing maturity and calmness in all interactions."
+      },
+      {
+        "name": "JIANNA  WANJIRU",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Jianna is an outgoing and active learner. She has shown commendable writing progress and handles written assignments very well. She interacts positively with other peers and completes tasks on time. More effort is needed to improve her reading fluency.",
+        "competencies": "Jianna demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "He is loving and cheerful learner."
+      },
+      {
+        "name": "JOSHUA OMONDI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Joshua is an active and organized learner. He demonstrates a strong grasp of reading and writing skills. He reads appropriately for the term, maintains good peer relationship and completes assignments promptly.",
+        "competencies": "Joshua demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "He is loving and cheerful learner."
+      },
+      {
+        "name": "Kai Mayian",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Kai is an energetic curious and enthusiastic learner who enjoys participating in class tasks and play best learning activities. He has settled in very well. He is making good progress in identifying numbers sounds and basic concepts taught in class. Kai is encouraged to improve his concentration during learning activities and complete tasks more carefully. He actively participates in skating where he demonstrates confidence balance and determination.",
+        "competencies": "He approaches challenges with confidence and seeks help when necessary.",
+        "values": "He is loving and cheerful learner."
+      },
+      {
+        "name": "Kalya Kipchumba",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Kalya is a determined, focused and confident in expressing ideas. He approach tasks with concentration and actively participates in class activities. He has shown noticeable improvement in reading fluency, number, sounds recognition and formation.",
+        "competencies": "Kalya is confident and out-spoken, able to express ideas clearly and contribute meaningful to class discussions.",
+        "values": "He is respectful and hardworking, always striving to reach his potential."
+      },
+      {
+        "name": "Kayla Wambui",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Kayla is an active and determined learner who completes her work diligently with minimal supervision. She interacts well with peers and continues to grow in reading fluency and writing skills. She enjoys swimming and ballet activities.",
+        "competencies": "She approaches learning with curiosity, exploring and applying new concepts eagerly.",
+        "values": "She is kind and responsible, showing reverence and attentiveness during class prayers and Bible stories."
+      },
+      {
+        "name": "Keren Jemma",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Keren is an intelligent and determined learner who shows consistent improvement in both reading fluency, sounds and number formation. She works confidently independently with minimal supervision.",
+        "competencies": "She approaches learning with curiosity, exploring and applying new concepts eagerly.",
+        "values": "Keren is respectful and obedient, showing spiritual growth through her participation in prayer and discussions."
+      },
+      {
+        "name": "KRYSTAL NJAMBI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Krystal is brilliant and active learner. She demonstrates excellent writing skills and follows instructions carefully. She cooperates well with others. More attention is needed in reading development.",
+        "competencies": "She approaches learning with curiosity, exploring and applying new concepts eagerly.",
+        "values": "Krystal is peaceful and loving learner."
+      },
+      {
+        "name": "Kylian Njomo",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Kylian is a confident and determined learner who continues to excel, particularly in reading fluency, sounds and number formation. He enjoys skating and contributes positively to class discussions.",
+        "competencies": "He approaches challenges with confidence and seeks help when necessary.",
+        "values": "Kylian is a responsible and committed learner who gives his best effort in all activities."
+      },
+      {
+        "name": "Laurel Cherotich",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Laurel is a brilliant and curious  learner who has made remarkable progress in reading fluency. He works well with and displays excellent listening skills. He is naturally curious always eager to ask questions , explore ideas and discover new things. He enjoys swimming.",
+        "competencies": "She approaches learning with curiosity, exploring and applying new concepts eagerly.",
+        "values": "Laurel is gentle and respectful, showing spiritual awareness during prayer and devotion sessions."
+      },
+      {
+        "name": "Leikan Tenga",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Leikan is a brilliant and curious  learner who has made remarkable progress in reading fluency. He works well with and displays excellent listening skills. He is naturally curious always eager to ask questions , explore ideas and discover new things. He enjoys swimming.",
+        "competencies": "He demonstrates independence in managing his tasks and is adept at using digital tools.",
+        "values": "He is a disciplined learner who demonstrates respect and focus during prayer sessions."
+      },
+      {
+        "name": "Leon Kamau",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Leon is a brilliant, active and organized learner. He shows outstanding writing ability. She cooperates with other peers and completes assignments consistently.  I am confident that with targeted support and continued effort, Leylani will make a significant progress in the reading fluency.",
+        "competencies": "Leon demonstrates independence in managing his tasks and is adept at using digital tools.",
+        "values": "He sets a positive example through her calm and respectful demeanor, reflecting strong spiritual growth."
+      },
+      {
+        "name": "LEON KARIUKI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Leon is a brilliant, active and organized learner. He shows outstanding writing ability. She cooperates with other peers and completes assignments consistently.  I am confident that with targeted support and continued effort, Leylani will make a significant progress in the reading fluency.",
+        "competencies": "Leon demonstrates independence in managing his tasks and is adept at using digital tools.",
+        "values": "Leon is kind and loving learner."
+      },
+      {
+        "name": "LEYLANI KENDRA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Leylani is brilliant, active and organized learner. She shows outstanding writing ability. She cooperates with other peers and completes assignments consistently.  I am confident that with targeted support and continued effort, Leylani will make a significant progress in the reading fluency.",
+        "competencies": "Leylani applies classroom knowledge mean fully in daily learning situations.",
+        "values": "She is honest, caring and obedient learner."
+      },
+      {
+        "name": "Liam Gandi",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Liam is a cheerful and cooperative learner who participates well in classroom routines and learning activities. He is making steady progress in developing early reading and counting skills and is able to complete tasks with minimal support. Liam is encouraged to practice patience and concentration to improve his accuracy and confidence during learning activities. He actively participates in skating where he demonstrate courage coordination and determination.",
+        "competencies": "He sets a positive example through her calm and respectful demeanor, reflecting strong spiritual growth.",
+        "values": "He is respectful, responsible, and displays good manners daily. He actively participates well in prayers and class devotions."
+      },
+      {
+        "name": "MAVERICK ETHAN",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Maverick is an attentive learner. He has shown great improvement in recognition and formation of sounds. He interacts positively with other peers. His reading fluency needs more reinforcement.",
+        "competencies": "He sets a positive example through her calm and respectful demeanor, reflecting strong spiritual growth.",
+        "values": "Maverick is peaceful and loving."
+      },
+      {
+        "name": "Max Jelani",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Max is a polite and self-motivated learner who completes his work punctually and independently. His reading fluency has improved steadily, and he enjoys participating in outdoor activities.",
+        "competencies": ": Max demonstrates good citizenship and collaboration when engaging with others.",
+        "values": "He is respectful, responsible, and displays good manners daily. He actively participates well in prayers and class devotions."
+      },
+      {
+        "name": "Maya Gathoni",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Maya is a polite and hardworking learner who relates well with others. She is making a steady in sounds and number formation. She is encouraged to read more to enhance fluency.",
+        "competencies": "She takes responsibility for her belongings and demonstrates courtesy in class.",
+        "values": "Maya shows spiritual awareness and respect during prayer sessions."
+      },
+      {
+        "name": "MICHAELLA  NJERI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "She  is a brilliant and curious  learner who has made remarkable progress in reading fluency. He works well with and displays excellent listening skills. He is naturally curious always eager to ask questions , explore ideas and discover new things. He enjoys swimming.",
+        "competencies": "Michaella demonstrates good decision-making during classroom tasks.",
+        "values": "Michaela is kind, responsible and respectful."
+      },
+      {
+        "name": "Myles Ngugi",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Myles is an active and determined learner. He has settled in very well. He has shown interest and participates well in class activities. He has shown slight improvement in sounds and number formation. Needs more practice in sounds and number recognition.",
+        "competencies": "Myles approaches learning with enthusiasm, takes initiative in activities, and shows a strong desire to succeed.",
+        "values": "He is kind and respectful towards his peers and teachers"
+      },
+      {
+        "name": "NADINE WANJIRU",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Leikan is a brilliant and curious  learner who has made remarkable progress in reading fluency. He works well with and displays excellent listening skills. He is naturally curious always eager to ask questions , explore ideas and discover new things. He enjoys swimming.",
+        "competencies": "Nadine demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "Nadine is kind and respectful learner."
+      },
+      {
+        "name": "NANDI MUTHONI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Nandi is calm and committed learner. She demonstrates outstanding ability in writing activities and presents neat work. She relates well with others and finishes tasks promptly. More effort is needed in reading smoothly and confidently.",
+        "competencies": "Nandi applies classroom knowledge mean fully in daily learning situations.",
+        "values": "Nandi is honest, caring and obedient learner."
+      },
+      {
+        "name": "NAOMI  GACHIGI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Naomi is a self-intelligent and motivated learner. Reading skills are developing as expected, interacts respectfully with peers and finishes work on time.",
+        "competencies": "She clearly and confidently expresses ideas both verbally and in writing during learning process.",
+        "values": "Naomi is honest, responsible and respectful learner."
+      },
+      {
+        "name": "NASHLEY  WANJIKU",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Nashley is an attentive and self-driven learner. She has shown a strong writing competence and produces neat written work. She interacts well with other peers and manages classroom tasks within time. Her reading fluency needs more reinforcement.",
+        "competencies": "Nashley applies classroom knowledge mean fully in daily learning situations.",
+        "values": "Nashley is loving, caring and obedient learner."
+      },
+      {
+        "name": "NATE MACHARIA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Nate is an outgoing and jovial learner. He shows independent thinking. His Reading skills are on target. He collaborates well with the peers and finishes tasks well . He has shown a recommendable progress this term.",
+        "competencies": "Nate articulates thoughts and questions clearly during classroom discussion ensuring that ideas are understood.",
+        "values": "Nate is kind and obedient learner."
+      },
+      {
+        "name": "NATHAN KIPCHUMBA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Nathan is keen and calm learner. He produces very good written work and shows independent thinking. He meets reading expectations, collaborates well with peers and finishes tasks as required.",
+        "competencies": "Nathan is keen and calm learner. He produces very good written work and shows independent thinking. He meets reading expectations, collaborates well with peers and finishes tasks as required.",
+        "values": "Nathan shows obedience to classroom rules and routines."
+      },
+      {
+        "name": "Nathan Thumbi",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Thumbi is an independent and organised learner who approaches his studies with confidence. He demonstrates a strong grasp of concept and consistently applies them in class. His reading and writing skills continues to improve, and he enjoys swimming and outdoor activities",
+        "competencies": "Even though independent , the learner interacts well with others ,shares materials and respects rules.",
+        "values": "Thumbi cares deeply for his peers and learning materials and always completes his tasks responsibly."
+      },
+      {
+        "name": "NIMO WAMAITHA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Nimo is a kind lively and cooperative learner who enjoys participating in class activities and interacting with her peers. She is deadly developing her early literacy and numeracy skills and is able to complete most of our classroom tasks with the guidance. Pendo is encourage to practice speaking confidently and attempting tasks in dependently to build more self confidence in her learning. She actively participate in ballet where she demonstrates creativity rhythm and joy.",
+        "competencies": "She embraces learning new skills with enthusiasm and persistence.",
+        "values": "He is kind and cheerful learner."
+      },
+      {
+        "name": "Pendo Mmesoma",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Pendo is a kind lively and cooperative learner who enjoys participating in class activities and interacting with her peers. She is deadly developing her early literacy and numeracy skills and is able to complete most of our classroom tasks with the guidance. Pendo is encourage to practice speaking confidently and attempting tasks in dependently to build more self confidence in her learning. She actively participate in ballet where she demonstrates creativity rhythm and joy.",
+        "competencies": "She embraces learning new skills with enthusiasm and persistence.",
+        "values": "She is kind and loving learner."
+      },
+      {
+        "name": "Precious Ndina",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Precious is an intelligent and determined learner. She has settled in very well and collaborates well with others. She demonstrates a strong grasp of concept and consistently applies them in reading fluency, sounds and number formation.",
+        "competencies": "Precious enjoys engaging with new topics and contributes actively in class.",
+        "values": "She is kind and caring, participating thoughtfully in Bible stories and prayer activities."
+      },
+      {
+        "name": "Rafa Kariuki",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Rafa is a determined and eager learner. He works well independently under minimal supervision. His reading fluency, sounds and number formation has continue to improve steadily. He participates well in both class and outdoor activities.",
+        "competencies": "He shows positivity and enthusiasm when learning new skills.",
+        "values": "Rafa is kind and sincere, participating reverently in prayers and class devotions."
+      },
+      {
+        "name": "RAPHAEL CHEGE",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Raphael is brilliant and composed learner. He has shown great improvement in writing skills. He interacts positive with other peers. More attention is needed to improve his reding fluency.",
+        "competencies": "Raphael shows digital awareness when using learning materials and devices.",
+        "values": "He is kind and peaceful learner."
+      },
+      {
+        "name": "REAGAN MANDUKU",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Reagan is brilliant and composed learner. He has shown great improvement in writing skills. He interacts positive with other peers. More attention is needed to improve his reding fluency.",
+        "competencies": "Reagan demonstrates strong communication skills and expresses ideas clearly during learning activities.",
+        "values": "He is kind and loving learner."
+      },
+      {
+        "name": "RIIRI YISRAEL",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Riiri is brilliant, active and organized learner. She excels in writing activities and shows good concentration during lessons. She interacts well with other peers and completes tasks on time.",
+        "competencies": "Riiri shows digital awareness when using learning materials and devices.",
+        "values": "Riiri is kind and respectful learner."
+      },
+      {
+        "name": "Sabrina Wamuyu",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Sabrina is an active and determined learner who participates eagerly in both class and co-curricular activities such as swimming and outdoor activities. She is making a steady progress in sounds and number formation. She needs more practice in reading fluency.",
+        "competencies": "She embraces learning new skills with enthusiasm and persistence.",
+        "values": "Sabrina is calm, kind, and respectful, showing maturity during prayers."
+      },
+      {
+        "name": "TAJI KARUGA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Taji  is an active and energetic learner. He cooperates well with other peers. He demonstrates excellent writing skills and follows instructions carefully. More attention is needed in to improve his reading fluency.",
+        "competencies": "Taji embraces learning new skills with enthusiasm and persistence.",
+        "values": "Taji is honest, caring and obedient learner."
+      },
+      {
+        "name": "TATIANA EMMA",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Tatiana is an outgoing learner. She has shown great improvement in formation of sounds. She interacts positively with other peers. More effort is needed to improve her writing skills and reading fluency.",
+        "competencies": "Tatiana enjoys using tablets during class activities in practicing activities such as drawing, matching and pairing.",
+        "values": "She is kind and loving learner."
+      },
+      {
+        "name": "THEO NDUATI",
+        "stream": "RED",
+        "teacher": "TR.FAITH",
+        "performance": "Theo is an active and energetic learner. He cooperates well with other peers. He demonstrates excellent writing skills and follows instructions carefully. More attention is needed in to improve his reading fluency.",
+        "competencies": "Theo shows digital awareness when using learning materials and devices.",
+        "values": "Theo is kind and respectful learner."
+      },
+      {
+        "name": "Victoria Wangui",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Victoria is an informed and intelligent learner who has made noticeable progress in reading fluency. She enjoys storytelling and sharing his ideas. Needs more practice in sounds and number formation.",
+        "competencies": "Victoria approaches new skills with enthusiasm and persistence.",
+        "values": "She is caring and respectful toward his peers and teachers."
+      },
+      {
+        "name": "Winnie Wangui",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Winnie is an active and intelligent learner. She has shown a solid progress in reading fluency. She enjoys swimming and playing piano. She is encouraged to continue practicing sounds and number formation to improve her handwriting.",
+        "competencies": "She embraces learning new skills with enthusiasm and persistence.",
+        "values": "She is responsible and respectful, demonstrating spiritual growth and attentiveness during prayers and discussions."
+      },
+      {
+        "name": "Zawadi Njoki",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Zawadi is an active and intelligent learner. She has shown a solid progress in reading fluency. She enjoys swimming and playing piano. She is encouraged to continue practicing sounds and number formation to improve her handwriting.",
+        "competencies": "Zawadi enjoys using digital tools and applies technology with curiosity and confidence.",
+        "values": "She is careful and organized, showing responsibility for her belongings and classroom materials."
+      },
+      {
+        "name": "Zuri Njeri",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "Zuri is a calm confident and enthusiastic learner who participates actively in classroom activities and complete most of her tasks with the excitement. She is making good progress in her early learning skills especially in recognizing sounds, numbers and following simple instructions. Zuri is encouraged to continue practicing careful listening and focusing fully to improve a concentration and accuracy. She enjoys participating in ballet where she shows Grace confidence and enthusiasm.",
+        "competencies": "She embraces learning new skills with enthusiasm and persistence.",
+        "values": "Zuri is kind-hearted and respectful toward others."
+      },
+      {
+        "name": "Zuri Wambui",
+        "stream": "YELLOW",
+        "teacher": "TR.SUZANNE",
+        "performance": "",
+        "competencies": "",
+        "values": ""
+      }
+    ],
+    "marks_students": []
+  },
+  "Grade 1": {
+    "comments": [
+      {
+        "name": "ADYNE TYCE",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "He is a determined and eager learner he is gradually improving but requires extra time to complete tasks and understand new concepts. With continuous support, progress is evident Adyne is encouraged to stay focus during class and on tasks. He actively participates in swimming and soccer",
+        "competencies": "Participates in activities with guidance and is beginning to interact more with peers. He is gradually developing good habits and keeping his work space tidy.",
+        "values": "Shows good manners and is learning to follow classroom rules."
+      },
+      {
+        "name": "ALDEN KAMANGU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Alden is a committed and determined learner. He performs fairly well and completes tasks with guidance when necessary. He has improved in staying focused during class and on task, contributing positively to his overall academic performance. He is gradually developing his self-management and problem solving skill.",
+        "competencies": "He regularly inquiries for more information through reading of books to gain more knowledge as this enhances learning to learn.",
+        "values": "He is respectful and responsible."
+      },
+      {
+        "name": "ANDY MUNDATI",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Andy is a reserved and knowledgeable learner. He shows excellent academic performance and completes tasks accurately and on time. He consistently displays empathy and understanding towards the feelings and perspectives of others, which are greatly appreciated. He actively participates in soccer and skating.",
+        "competencies": "He regularly inquires for clarification on knowledge acquired in class. And he has demonstrated a strong capacity for critical thinking and problem solving which has greatly contributed to his success.",
+        "values": "He is responsible and loving boy who take active roles in class discussion."
+      },
+      {
+        "name": "ARIANNA WANGECI",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Arianna is an industrious and confident learner. She has settled well in school and her working habits are amazing. She consistently demonstrates excellent understanding of class activities and completes tasks independently. Arianna Shows strong reading and numeracy skills for the level. She also actively participates in tennis.",
+        "competencies": "Demonstrates strong communication and collaboration skills and participates actively in class discussions and group activities.",
+        "values": "Arianna shows respect, responsibility, and honesty in daily interactions."
+      },
+      {
+        "name": "BIANCAH NJERI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Bianca has shown commendable improvement in her reading fluency during class activities. She is becoming more confident when reading and is able to participate more actively during literacy lessons. Her general performance in class has also improved, and she continues to show encouraging progress in her learning. Well done Biancah!",
+        "competencies": "Bianca demonstrates growing confidence in her learning. She participates in class activities, works well with others, and continues to develop her communication and independent learning skills.",
+        "values": "She is a kind and respectful member of our class who consistently practices self-discipline and shows maturity ."
+      },
+      {
+        "name": "CHIRRIPO NORBETA",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Chirripo is a learner who struggles with some concepts but is showing determination and effort in her studies. She actively engages in class activities and is eager to learn, demonstrating a positive attitude toward improving her skills. With continued guidance, regular practice, and sustained effort, Chirripo is gradually making good  progress. Well done  Chirripo!",
+        "competencies": "She works well with her peers and is steadily developing her problem-solving, critical thinking, and.          independent learning skills",
+        "values": "She displays respect, kindness, and responsibility. She works well with her classmates and always strives to do what is right."
+      },
+      {
+        "name": "CRECIA SWEENEY",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Crecia is a determined and industrious learner. She requires extra guidance to complete tasks but is showing gradual improvement. More practice and encouragement will help. She actively participates in swimming and playing violin.",
+        "competencies": "She consistently seeks clarification on questions about the knowledge acquired and Shows willingness to participate in class tasks with guidance.",
+        "values": "She is kind and respectful."
+      },
+      {
+        "name": "DINAH WAKESHO",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is a committed and hardworking learner. Her performance is good. She participates in class activities and seeks help, when neededShe has demonstrated a positive attitude toward learning. She actively participates in soccer and scout.",
+        "competencies": "She has developed interest in the use of digital devices to gain more knowledge through research and enjoyment and she effectively express thoughts and ideas through words and action well.",
+        "values": "She is kind and respectful displaying self-discipline."
+      },
+      {
+        "name": "ELLA CHEBET",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is a bright and determined learner. She carries out tasks assigned to her with minimal supervision. She actively participates in-group activities and her classroom performance is superb. She actively participates in swimming.",
+        "competencies": "Ella has the ability to express her opinions and concerns effectively and communicates ideas clearly. She is gradually developing her problem solving and critical thinking skills.",
+        "values": "She is responsible, loving and respectful."
+      },
+      {
+        "name": "ESME WANJIRU",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Esme demonstrates good learning ability and shows promise in her academic work. She is capable of understanding the concepts taught in class and participates well in learning activities. With continued guidance, support, and encouragement, she will be able to strengthen her skills and achieve her full potential.",
+        "competencies": "She works well with others, participates in class activities, and is encouraged to continue building confidence in expressing her ideas and completing tasks independently.💚",
+        "values": "She is respectful and kind"
+      },
+      {
+        "name": "ETHAN MURIITHI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Ethan is a sharp learner who shows a good understanding of the concepts taught in class and participates well in learning activities. He approaches his work with interest and continues to make steady progress in his studies. Ethan is encouraged to continue practicing his handwriting so that the presentation of his work becomes clearer and neater. Well done Ethan",
+        "competencies": "Ethan demonstrates good thinking skills and is able to approach tasks with understanding and confidence. He shows the ability to solve problems with minimal guidance.",
+        "values": "He is honest, dependable, and demonstrates fairness in both academic and"
+      },
+      {
+        "name": "EVANSON KAMAU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Evanson is an active and determined learner. He requires regular guidance to complete tasks but demonstrates gradual improvement in class participation. He actively participates in soccer and swimming.",
+        "competencies": "He requires encouragement to participate in classroom activities and group discussions.",
+        "values": "He shows politeness and willingness to follow classroom rules."
+      },
+      {
+        "name": "GIANNA WANJIRU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is a knowledgeable and determined learner. She has consistently demonstrated good working habits and she strives to achieve the set goals, with continued guidance, regular practice Gianna is gradually making progress and is encouraged to keep working hard. She actively participates in swimming.",
+        "competencies": "She consistently seeks more information on the knowledge acquired in class by frequently asking questions. She is gradually showing interest in attempts to solve problems creatively.",
+        "values": "She is kind and respectful."
+      },
+      {
+        "name": "HANSEL NJAU",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Hansel is a bright and capable learner who grasps concepts quickly and demonstrates strong potential in his studies. However, he does not consistently complete his class work, which has limited his overall progress this term. With sustained focus, regular effort, and commitment to completing tasks, Hansel is expected to make significant improvements and fully realize his academic potential.",
+        "competencies": "He communicates his ideas clearly, participates well in class activities, and collaborates effectively with his         peers. He is developing his problem-solving, critical thinking, and independent learning skills, and is encouraged to continue building on these strengths.",
+        "values": "He dependable and demonstrates fairness in both academic and social settings"
+      },
+      {
+        "name": "HERI MUKENI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Heri is a bright and focused learner who consistently completes his assignments promptly and accurately. He demonstrates excellent understanding of the concepts taught and participates actively in class discussions. Heri approaches his work with diligence, responsibility, and enthusiasm, showing a strong commitment to learning. With his continued focus and consistent effort, he is well placed to achieve even greater success across all areas of his studies.",
+        "competencies": "He is a confident and focused learner who communicates his ideas clearly and participates actively in class activities. He works well with his peers and demonstrates strong problem-solving, critical thinking, and",
+        "values": "Heri consistently demonstrates respect, humility, and responsibility."
+      },
+      {
+        "name": "JAYDEN BITI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Jayden is a quiet learner who is making a sincere effort to overcome the challenges he faces in his studies. He demonstrates eagerness to learn and actively engages in class activities when encouraged. Over the term, he has shown gradual improvement and is developing greater confidence in his abilities. Jayden is encouraged to maintain his  positive attitude, continue putting in consistent effort, and take advantage of guidance and support to strengthen his understanding and overall performance. He also actively participates in co-curricular activities with a keen interest in skating",
+        "competencies": "He communicates his  ideas when encouraged, participates in class activities, and works cooperatively with his  peers. He is gradually developing her problem-solving, critical thinking, and independent learning skills and is encouraged to continue building on these strengths to support her steady progress.",
+        "values": "He is a kind and respectful learner"
+      },
+      {
+        "name": "JEREMY GACHUHI",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Jeremy is a focused and independent learner. He has consistently demonstrated good working habits and he strives to achieve the set goals. He shows high level of respect and kindness towards classmates and teachers, contributing to a positive classroom environment. He actively participates in soccer. He also shows great curiosity and attempts to solve problem creatively.",
+        "competencies": "He shows good communication skills and participates in-group activities when encouraged.",
+        "values": "Jeremy demonstrates respect and responsibility in class routines."
+      },
+      {
+        "name": "JOSHUA BLESSING",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Joshua is a focused and responsible learner who consistently completes his assignments on time. He demonstrates a good understanding of the concepts taught in class and approaches his work with a positive and committed attitude. Joshua participates in class activities and shows willingness to engage in learning tasks. With his continued effort and responsible approach to his studies, he is expected to make steady progress and achieve even greater success.",
+        "competencies": "He communicates his ideas clearly, participates actively in class activities, and works well with his peers.",
+        "values": "He is learning the importance of respect,kindness and responsibility with ongoing support"
+      },
+      {
+        "name": "KAI KIPKOECH",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Kai is a very sharp and focused learner who consistently completes his work on time. He demonstrates a strong understanding of class concepts and participates actively in learning activities. His positive attitude and commitment to his work continue to support his excellent progress. He shows great enthusiasm for co-curricular activities particularly enjoys soccer and chess.",
+        "competencies": "Kai communicates his ideas clearly, participates actively in class activities, and collaborates well with his peers. He approaches tasks with confidence .",
+        "values": "He consistently demonstrates respect, humility, and responsibility."
+      },
+      {
+        "name": "LEILANI WANJIRU",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Leilani is a bright and capable learner who quickly grasps new concepts and participates actively in class activities. She demonstrates strong potential and shows enthusiasm for learning. With continued focus and consistent effort, Leilani is expected to strengthen her understanding of the lessons and make even greater progress .",
+        "competencies": "She works well with her peers and is steadily developing her problem-solving, critical thinking, and independent learning skills. Her positive attitude and enthusiasm for learning continue to support her steady progress.",
+        "values": "She displays respect, kindness, and responsibility. She works well with her classmates and always strives to do what is right."
+      },
+      {
+        "name": "LIAM NGIGE",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Liam is a determined and committed learner. His working skills are encouragingly good. He requires additional support to understand some concepts but shows gradual improvement. He actively participants in soccer and swimming.",
+        "competencies": "He participates in learning activities when guided and is beginning to communicate ideas with classmates, Liam is encouraged to participate more actively in group activities.",
+        "values": "Liam demonstrates respect for teachers and peers and he is encouraged to follow classroom routines."
+      },
+      {
+        "name": "LIANA WANJIRU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is an enthusiastic and a knowledgeable learner. She has good working skills. She is capable of understanding the concept taught in class and participates well in learning activities. She is encouraged to continue practicing her handwriting presentation. She actively participates outdoor activities",
+        "competencies": "Displays strong problem-solving and creativity skills during learning activities that has greatly contributed to her academic success this year.",
+        "values": "Shows kindness and cooperation with classmates."
+      },
+      {
+        "name": "LOGAN DANIEL TIROP",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "He is a committed and determined learner. He carries out tasks assigned to him with minimal supervision. He actively participates in-group activities and his classroom performance has improved. Logan is encouraged to continue practicing his handwriting for the good presentation of his work. He actively participates in soccer.",
+        "competencies": "He has developed the ability to express his opinions and concerns effectively and confidently while interacting with others. Demonstrates emerging creativity and enjoy artistic activities with encouragement.",
+        "values": "He Shows kindness and respect toward classmates."
+      },
+      {
+        "name": "LUCIAS FAVOUR",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Lucius is a bright and capable learner who grasps concepts quickly and demonstrates strong understanding in class. While she has the ability to excel, she sometimes lacks consistency in completing her class work and putting in her best effort. With more regular focus, diligence, and attention to detail, she is expected to make significant progress and achieve excellent results in all areas of learning.",
+        "competencies": "She communicates her ideas clearly and  works  well with others during group activities. With continued diligence, she is likely to strengthen his problem-solving, independent learning, and collaborative skills.",
+        "values": "She dependable and demonstrates fairness in both academic and social settings"
+      },
+      {
+        "name": "MACHARIA TIFEOLUWA",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Macharia is a committed and independent learner. He has consistently demonstrated good working habits and he strives to achieve the set goals. He approaches learning with a positive attitude and shows confidence in applying new concepts. He is encouraged to complete classwork on time. He actively participates in skating.",
+        "competencies": "He consistently seeks more information on the knowledge acquired in class by frequently asking questions. Moreover, he shows respect for others and participate in class activities with enthusiasm.",
+        "values": "He is kind and Compassionate."
+      },
+      {
+        "name": "MALEEK KINGORI",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Maleek is a committed and determined learner. His work completion is timely. He needs more time to grasp certain learning concepts,he is showing positive progress with continuous support. He actively participates in swimming",
+        "competencies": "He learner is slowly building communication and collaboration skills during group activities. Maleek shows willingness to work.",
+        "values": "He is respectful and kind."
+      },
+      {
+        "name": "MYA WANJIRU",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Mya is a learner who shows understanding of the lessons taught and participates in class activities. She approaches her work with a positive attitude and completes tasks with guidance. Over the term, she has demonstrated steady progress and is gradually building confidence in her learning. With continued effort, active participation, and regular practice, Mya is expected to further strengthen her skills and improve her overall performance.",
+        "competencies": "She communicates her ideas during class activities and works well with her peers during group tasks. She is gradually developing her problem-solving, critical thinking, and independent learning skills.",
+        "values": "She shows kindness and cooperation"
+      },
+      {
+        "name": "NAILA NJOKI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Naila is a bright and cheerful learner who quickly grasps new concepts and actively participates in all class activities. She approaches her work with enthusiasm and consistently demonstrates a good understanding of the lessons taught. Over the term, she has shown steady progress in her learning and continues to build confidence in her abilities. With her positive attitude and continued effort, Naila is well placed to achieve even greater success in her studies.",
+        "competencies": "She upholds integrity in her work, treats her peers kindly, and is dependable both in class and outside. Her sense of discipline and positive behavior set an excellent example for others.",
+        "values": "She is kind and respectful"
+      },
+      {
+        "name": "NIC WANJOHI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Nic is a bright and capable learner who works independently and demonstrates excellent understanding of the concepts taught. He approaches his assignments with focus, diligence, and attention to detail, consistently completing tasks accurately and on time. Nic’s confidence, self-motivation, and enthusiasm for learning contribute positively to his good academics. Well done Nic!",
+        "competencies": "He works well on his own, demonstrates strong problem-solving and critical thinking skills, and approaches learning with focus and enthusiasm. His self-motivation and consistent effort continue to support his steady progress.",
+        "values": "He is kind-hearted and dependable"
+      },
+      {
+        "name": "PAUL KINUTHIA",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "He is a reserved and an intelligent learner. His performance is remarkable. Completes tasks accurately and confidently. He often works fast which can occasionally affect the neatness of his tasks. He is encouraged to be keen to produce good result. He actively participates in class activities with enthusiasm.",
+        "competencies": "Displays leadership skills during group work and shares ideas confidently.",
+        "values": "Demonstrates responsibility and respect for others."
+      },
+      {
+        "name": "PETER KAIZEN",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Peter is a sharp and capable learner who quickly grasps new concepts and demonstrates strong understanding in class. He often completes tasks rapidly, which can sometimes affect the accuracy and quality of his work. With more focus, patience, and careful attention to detail, Peter has the potential to achieve excellent results and fully realize his academic abilities",
+        "competencies": "He communicates his ideas clearly, participates actively in class activities, and works well with his peers. As a learner, he continues to develop his problem-solving, critical thinking, and independent learning",
+        "values": "He is honest and loving"
+      },
+      {
+        "name": "PRINCE JAYDEN",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Jayden is an average learner who has shown steady progress this term. He demonstrates understanding of the concepts taught and completes most tasks with guidance. He participates in class activities and is gradually building confidence in his learning. With consistent effort, active engagement, and regular practice, Jayden is likely to strengthen his skills further and improve his overall performance..",
+        "competencies": "He communicates his ideas clearly, participates in class activities, and works cooperatively with his peers. He is gradually strengthening his problem-solving, critical thinking, and independent learning skills and is encouraged to continue building on these abilities.",
+        "values": "He shows kindness and displays responsibility"
+      },
+      {
+        "name": "RAPHAEL ALEXANDER",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "He is an enthusiastic and knowledgeable learner. He has good working skills. Performs very well in most learning areas and shows curiosity in learning new things. He is encouraged to maintain this positive approach in learning to achieve even greater progress. He actively participates in swimming and he shows great curiosity and attempts to solve problems.",
+        "competencies": "Displays strong problem-solving and creativity skills during learning activities.",
+        "values": "Raphael is honest, responsible and a respectful learner."
+      },
+      {
+        "name": "RIC BRANDON",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Ric is a bright and capable learner who has gradually improved in his work this term. He demonstrates growing confidence in understanding concepts and is actively participating in class activities. As a learner, he continues to develop his skills steadily and is encouraged to maintain this positive approach to learning to achieve even greater progress.",
+        "competencies": "He communicates his ideas clearly, participates actively in class activities, and collaborates well with his peers. He is gradually strengthening his problem-solving, critical thinking, and independent learning skills.",
+        "values": "He is kind and honest"
+      },
+      {
+        "name": "RIO MATHENGE",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Rio Mathegi is a bright and capable learner who demonstrates a good understanding of class work. He often works quickly, which can occasionally affect the neatness of his tasks. With continued attention to detail and practice in handwriting, he is expected to achieve even better results.",
+        "competencies": "He participates actively in class and collaborates well with classmates. While he works quickly, he is encouraged to focus on neatness and continue practicing his handwriting.",
+        "values": "He is confident and works well with others"
+      },
+      {
+        "name": "ROY GACHERU",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Roy is a bright and capable learner grasps concepts quickly and demonstrates strong potential in his learning. Unfortunately, he rarely completes his class work, which has limited his overall progress this term. He is encouraged to develop greater consistency, focus, and responsibility in completing tasks. With sustained effort and commitment to his studies, Roy has the ability to make significant improvements and fully realize his academic potential.",
+        "competencies": "Roy demonstrates strong potential in his core competencies. He communicates his ideas clearly, participates in class activities, and works well with his peers. He continues to develop his problem-solving, collaboration, and independent learning skills.",
+        "values": "He is kind and honest"
+      },
+      {
+        "name": "RYAN NJEHU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "He is an informed and curious learner. He understands most class concepts and he is encouraged to complete his classwork on time. He actively participates in Tennis and Skating.",
+        "competencies": "He has developed the ability to express his opinions and concerns effectively and confidently while interacting with others. He continues to develop his problem solving collaboration and independent learning skills.",
+        "values": "He is loving, respectful and works well with peers"
+      },
+      {
+        "name": "SASHA KENDI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Sasha is a disciplined and focused learner who has made steady progress this term. She consistently completes her work with care and demonstrates growing confidence in understanding class concepts. She participates thoughtfully in class activities and interacts respectfully with her peers.",
+        "competencies": "She continues to develop her critical thinking, problem-solving, and independent learning skills, and is encouraged to maintain this positive approach to achieve even greater success.",
+        "values": "She consistently demonstrates respect, honesty, and kindness. She treats her classmates with care and consideration and is always ready to help others when they need support."
+      },
+      {
+        "name": "SIOBHAN SHANY SETH",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is an industrious and self-dedicated learner. She has settled well in class and her performance is good. She is an enthusiastic learner who performs excellently across most subjects. She actively participates in swimming, piano and skating.",
+        "competencies": "Displays leadership skills during group work and shares ideas confidently. She has good habits, keep workspace tidy and complete tasks on time.",
+        "values": "Demonstrates responsibility and respect for others."
+      },
+      {
+        "name": "TALIA WAHITO",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Talia is a dedicated learner who is always willing to learn and engage in class activities. She approaches her work with a positive attitude and completes tasks with guidance, demonstrating steady progress over the term. As she continues to participate actively and put in consistent effort, Talia is likely to strengthen her understanding and develop greater confidence in all areas of her learning.",
+        "competencies": "She works well with her peers and is steadily developing her problem-solving, critical thinking, and independent learning skills. Her positive attitude and willingness to learn continue to support her progress across all learning areas .",
+        "values": "She is cooperative and kind to others"
+      },
+      {
+        "name": "TEEJAY BARAKA",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Teejay is a determined and diligent learner. He is attentive during lessons and completes assignments satisfactorily. Continued practice will enhance good performance. He is encouraged to develop greater consistency, focus and responsibility in completing task. He actively participate in soccer.",
+        "competencies": "Teejay communicates ideas clearly and works well with peers.",
+        "values": "He demonstrates respect and teamwork."
+      },
+      {
+        "name": "TEHILLAH WAIRIMU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Tehillah is a determined and industrious learner. She completes her work regularly and actively participates in co-curricular activities. She is progressing in time and requires more time and, practice to understand learning activities fully. She actively participates in swimming, ballet and skating.",
+        "competencies": "She reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences and shows effort in participating in class tasks when assisted by the teacher.",
+        "values": "She is kind and respectful."
+      },
+      {
+        "name": "THEO NESTON",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Theo is a learner who faces some challenges in grasping certain concepts but is showing commendable determination and effort in his work. He participates in class activities and seeks help when needed, demonstrating a positive attitude toward learning. With continued guidance, consistent practice, and sustained effort, Theo is gradually making progress . Well done Theo",
+        "competencies": "He participates in class activities, communicates his ideas when encouraged, and collaborates well with his peers.",
+        "values": "He works well with others"
+      },
+      {
+        "name": "TORIA NDIRANGU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "Toria is an active and an agreeable learner. He performs well in most learning areas. He has difficulties staying focused during class and on tasks. He is encouraged to stay focused and keep working hard to improve his performance. He actively participates in soccer and chess.",
+        "competencies": "Works well with peers and communicates ideas clearly",
+        "values": "Shows respect and cooperation."
+      },
+      {
+        "name": "TYIANA ALYA",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is an eager and committed learner. Her work completion is good.She Shows good understanding of class work and completes tasks with minimal assistance, with more regular focus and attention to detail, she actively participates in ballet dance.",
+        "competencies": "She has good communication skills, which are evident during group activities and interactions. She is likely to strengthen her problem solving and collaborative skills.",
+        "values": "Displays discipline and respect for school rules."
+      },
+      {
+        "name": "ZANE TAJI",
+        "stream": "YELLOW",
+        "teacher": "TR.PENINAH",
+        "performance": "Zane is a bright and focused learner who consistently completes his assignments promptly and accurately. He demonstrates strong comprehension of class work and actively participates in lessons and class discussions. Zane approaches learning with a positive attitude and shows confidence in applying new concepts. With continued effort and engagement, he is likely to achieve even greater success in his studies.",
+        "competencies": "He contributes meaningfully during group activities and classroom discussions, communicates effectively, and demonstrates responsibility in completing his tasks.",
+        "values": "He demonstrates leadership skills"
+      },
+      {
+        "name": "ZAYA ZAWADI",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "She is an enthusiastic and self-motivated learner. Her work completion is superb and the performance is good. She approaches her work with enthusiasm and consistently demonstrates a good understanding of the lesson taught. She actively participates in swimming.",
+        "competencies": "She regularly inquiries for more information through reading of books to gain more knowledge. Zaya is steadily developing her problem solving, critical thinking and independent learning.SSSS",
+        "values": "She is respectful and kind."
+      },
+      {
+        "name": "ZAYDAN NDICHU",
+        "stream": "RED",
+        "teacher": "TR.GRACE",
+        "performance": "He is a principled and self-driven learner. His working skills are superb with good performance. He reads many books for enjoyment and he demonstrates excellent social skills. He actively participates in soccer and swimming.",
+        "competencies": "Strong critical thinking and creativity skills are evident during class activities, often taking the initiative to help peers and work collaboratively on projects.",
+        "values": "He is co-operative and works very well with other peers displaying leadership skills."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "HERI MUKENI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "SIOBHAN SHANY SETH",
+        "stream": "RED"
+      },
+      {
+        "name": "LIANA WANJIRU KIMANGI",
+        "stream": "RED"
+      },
+      {
+        "name": "PAUL KINUTHIA",
+        "stream": "RED"
+      },
+      {
+        "name": "ZANE TAJI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JEREMY GACHUHI",
+        "stream": "RED"
+      },
+      {
+        "name": "NAILA NJOKI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ZAYDAN NDICHU",
+        "stream": "RED"
+      },
+      {
+        "name": "RIC BRANDON",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "NIC WANJOHI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "DINAH WAKESHO",
+        "stream": "RED"
+      },
+      {
+        "name": "MACHARIA TIFEOLUWA",
+        "stream": "RED"
+      },
+      {
+        "name": "RAPHAEL ALEXANDER",
+        "stream": "RED"
+      },
+      {
+        "name": "KAI KIPKOECH",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ARIANNA WANGECI",
+        "stream": "RED"
+      },
+      {
+        "name": "RIO MATHENGE",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LUCIAS FAVOUR",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JOSHUA BLESSING",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ZAYA ZAWADI",
+        "stream": "RED"
+      },
+      {
+        "name": "ROY GACHERU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TYIANA ALYA",
+        "stream": "RED"
+      },
+      {
+        "name": "ELLA CHEBET",
+        "stream": "RED"
+      },
+      {
+        "name": "RYAN NJEHU",
+        "stream": "RED"
+      },
+      {
+        "name": "ANDY MUNDATI",
+        "stream": "RED"
+      },
+      {
+        "name": "LEILANI WANJIRU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "PRINCE JAYDEN",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "MALEEK",
+        "stream": "RED"
+      },
+      {
+        "name": "GIANNA WANJIRU",
+        "stream": "RED"
+      },
+      {
+        "name": "MYA WANJIRU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ETHAN MURIITHI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ESME WANJIRU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ADYNE TYCE",
+        "stream": "RED"
+      },
+      {
+        "name": "CRECIA SWEENEY",
+        "stream": "RED"
+      },
+      {
+        "name": "PETER KAIZEN",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ALDEN KAMANGU",
+        "stream": "RED"
+      },
+      {
+        "name": "LOGAN DANIEL TIROP",
+        "stream": "RED"
+      },
+      {
+        "name": "SASHA KENDI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TALIA WAHITO",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TORIA NDIRANGU",
+        "stream": "RED"
+      },
+      {
+        "name": "HANSEL NJAU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TEHILLAH WAIRIMU",
+        "stream": "RED"
+      },
+      {
+        "name": "THEO NESTON",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "BIANCAH NJERI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "CHIRRIPO NORBETA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LIAM NGIGE",
+        "stream": "RED"
+      },
+      {
+        "name": "TEEJAY BARAKA",
+        "stream": "RED"
+      },
+      {
+        "name": "JAYDEN BITI",
+        "stream": "YELLOW"
+      }
+    ]
+  },
+  "Grade 2": {
+    "comments": [
+      {
+        "name": "ABIGAEL WANGUI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Abigail is a self- conscious and determined learner. She completes her work on time and has shown a deep understanding of all the strands covered this term. She participates actively in swimming and demonstrates teamwork and discipline.",
+        "competencies": "Abigail has demonstrated the ability to put into practice concepts taught in class during the learning process. She manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Abigail is friendly and helpful while interacting with others."
+      },
+      {
+        "name": "AGATHA WENDO",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Agatha is compassionate, focused and kind learner. She has shown exceptional growth in her academic     skills and has consistently exceeded our expectations. She has shown significant improvement in behavior and is maturing as a responsible learner. She actively participates in piano.",
+        "competencies": "Agatha has developed the ability to actively participate and work collaboratively with others as they learn.",
+        "values": "Agatha is empathetic, considerate and kind towards others."
+      },
+      {
+        "name": "ALVIN CHEGE",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Alvin is passionate and open to feedback. He is conceptual on his schoolwork and completes his work on time. He actively participates in chess and soccer activities.",
+        "competencies": "Alvin has developed an ability to succeed and overcome challenges. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Alvin is loving and considerate as he interacts with other learners during learning."
+      },
+      {
+        "name": "AMARI MWINZI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Amani is a determined and enthusiastic learner. He has developed consistent working habits throughout the term. He participates actively in swimming, soccer and violin, and he demonstrates teamwork and discipline.",
+        "competencies": "Amani manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Amani is cooperative and loving. He takes active roles in class activities."
+      },
+      {
+        "name": "ARIANA ZURI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Arianna is a determined and an enthusiastic learner. Her performance is meeting expectation in all learning areas. She has developed consistent working habits throughout the term. She actively participates in chess and tennis.",
+        "competencies": "Arianna manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Arianna is a cooperative and loving learner. She displays self –discipline."
+      },
+      {
+        "name": "ARVIN NDARUA",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Arvin is kind hearted and honest. He completes his work on time and his dedication to learning is commendable. He participates actively in skating and outdoor activities.",
+        "competencies": "Arvin manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Arvin is friendly and kind to others."
+      },
+      {
+        "name": "BLESSING MAKENA",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Blessing is a cheerful and curious learner. She has shown consistency on the improvement of her working habits when interacting with various learning activities. She enjoys show casing her talents and abilities. She actively participates in swimming.",
+        "competencies": "Blessing expresses her opinions more confidently and reasons independently when interacting with learning experiences.",
+        "values": "Blessing embraces all the learners and is most loved by them."
+      },
+      {
+        "name": "BONARERI OCHENGO",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Bonareri is firm but kind and a reliable team leader in class. She is a patient listener and completes her work on time. She participates actively in co - curricular activities.",
+        "competencies": "Bonareri has demonstrated the capability to lead fairly and effectively, adhering to the guiding school rules and regulations.",
+        "values": "Bonareri is self-disciplined and empathetic."
+      },
+      {
+        "name": "CARL KAMAU",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Carl is confident, considerate and responsible. He has demonstrated a strong capacity for critical thinking and problem solving, which has greatly contributed to his academic success this term. He participates actively in soccer and chess, and he demonstrates teamwork and discipline",
+        "competencies": "Carl has demonstrated the ability to think analytically to solve problems at hand. He manipulates computers and other digital devices with ease to get useful information as instructed",
+        "values": "Carl is obedient and responsible and takes own responsibility."
+      },
+      {
+        "name": "DAVID JABARI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "David has demonstrates excellent classroom behavior and positively influences classmates. He is punctual in his classwork. He actively participates in soccer and chess.",
+        "competencies": "David has developed the ability to embrace continuous improvement and growth acquired during learning and interaction with other learners.",
+        "values": "David is self-controlled as he interacts with others and determined during learning."
+      },
+      {
+        "name": "ELLA HADASSAH",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Ellah is a friendly and curious learner. She is encouraged to complete her classwork. She actively participates in tennis.",
+        "competencies": "Ellah has developed the ability to enjoy using digital devices during learning.",
+        "values": "Ellah is helpful and active during learning."
+      },
+      {
+        "name": "ESTHER GATHONI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Esther is a brilliant and focused learner. She has consistently shown a deep understanding of all the strands covered this term; this has reflected in her excellent grades. However, she needs encouragement to be more timely on completion of classwork. She participates actively in swimming and skating.",
+        "competencies": "Esther has enjoyed actively engaging with others participating during class discussions and practical lessons. She manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Esther is kind and respectful while interacting with others."
+      },
+      {
+        "name": "ETHAN MURIMI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Ethan is a calm and gentle learner. He is a positive team player who handles his work with commitment. His academic achievement this term has been outstanding. He participates actively in swimming, piano and soccer activities.",
+        "competencies": "Ethan has developed respect to diversity and upheld ethical values during class. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Ethan is a gentle and calm learner while interacting with others."
+      },
+      {
+        "name": "EUPHRATES TRIUMPH",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Euphrates is an active and energetic learner.  He needs to be encouraged to work more independently and do more practice in reading and spelling. He participates actively in soccer and demonstrates discipline.",
+        "competencies": "Euphrates manipulates computers and other digital devices with ease to get useful information as instructed. He reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences.",
+        "values": "Euphrates is a loving and peaceful learner always active in class discussions."
+      },
+      {
+        "name": "GOLD OMONDI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Gold is kind and loving learner. He has struggled with completing assignments on time. A focus on time management skills over the break could be beneficial.",
+        "competencies": "Gold has developed the ability to operate comfortably digital devices provided at school with ease and enjoyment.",
+        "values": "Gold is encouraged to enhance self-motivation skills and commitment to tasks could improve his academic performance."
+      },
+      {
+        "name": "HAZEL NJOKI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Hazel is kind and cheerful learner. She has been a joy to teach this term, her dedication to learning has been admirable. She actively participates in guitar, dance and tennis.",
+        "competencies": "Hazel has enjoyed brainstorming and developing concepts introduced in class during learning.",
+        "values": "Hazel is confident and charming during learning."
+      },
+      {
+        "name": "ISRAELLA WAITHERA",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Israella is an active and energetic learner. She has shown some progress in Mathematics Activities, however she needs to be encouraged to work more independently and complete her work on time. She participates actively in dance and tennis.",
+        "competencies": "Israella manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Israella is cooperative and loving especially while interacting with her peers."
+      },
+      {
+        "name": "IVANNA WANJIRU",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Ivanna is composed, open to suggestions and selfless. She is self-driven in her daily endeavors in school. She has shown a remarkable improvement in her academic performance. She needs more practice in Mathematics Activities. She participates actively in swimming lessons.",
+        "competencies": "Ivanna has demonstrated the ability to apply creative and innovative thinking to solve problems at hand.",
+        "values": "Ivanna is respectful and accommodative in class during lessons."
+      },
+      {
+        "name": "JAHEIM MUTUKU",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Jahiem is a compassionate and loving learner. His performance is meeting expectations in all learning areas.  He is encouraged to put more practice in work presentations and timely working. He actively participates in swimming.",
+        "competencies": "Jahiem shows the ability to participate actively in promoting understanding and appreciation of diverse cultural practices.",
+        "values": "Jahiem is calm and kind while interacting with other learners."
+      },
+      {
+        "name": "JAYLEN HARRY",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Jaylen is a determined and industrious learner. He prioritizes responsibilities in order to meet goals. He completes his work regularly. He participates actively in soccer.",
+        "competencies": "Jaylen analyzes and evaluates information to come up with a solution. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Jaylen is a kind and honest learner and sets a good example."
+      },
+      {
+        "name": "JESSE MUIGAI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Jesse is an energetic and industrious learner. He completes his work on time. He has shown significant improvement in behavior and is maturing as a responsible learner. He actively participates in soccer activities.",
+        "competencies": "Jesse has developed the ability to generate new ideas and express himself confidently and creatively.",
+        "values": "Jesse is a loving and determined learner."
+      },
+      {
+        "name": "JOANNA MURINGE",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Joanna is a determined and industrious learner. She listens attentively and makes solid effort to avoid distractions that could interrupt the learning process. She participates actively in outdoor activities.",
+        "competencies": "Joanna reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences.",
+        "values": "Joanna is a loving and peaceful learner always active in class discussions."
+      },
+      {
+        "name": "JULIESTEVENS OFUYA",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Julistevens is curious and receptive learner. He completes his work on time. He is encouraged to do more practice on letter formations. He actively participates in basketball and swimming.",
+        "competencies": "Julistevens has developed an ability to lead and comprehend leadership as a value. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Julistevens is helpful and a good listener during learning."
+      },
+      {
+        "name": "JUSTIN GICHICHI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Justin is patient and determined. He is cheerful and open to feedback. Encouraged to continuously practice on tidy and neat work presentation. He participates actively in soccer.",
+        "competencies": "Justin has developed the ability to effectively express himself during learning. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Justin is helpful during learning and respectful as he interacts with other learners."
+      },
+      {
+        "name": "JYSON MUNENGE",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Jyson is a cheerful and cooperative learner. He completes tasks assigned to him regularly. He strives to reach his potential in all the learning areas. He participates actively in swimming and soccer and demonstrates teamwork and discipline.",
+        "competencies": "Jyson has demonstrated the ability to express his opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Jyson is a loving learner, very responsible and displays self-discipline."
+      },
+      {
+        "name": "KAMSI OKAFOR",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Kamsi is an active and energetic learner. She has made significant improvements in completing classwork on time. She needs to be encouraged to do more practice in Kiswahili reading and writing.",
+        "competencies": "Kamsi reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences.",
+        "values": "Kamsi is a peaceful learner and she remains an active girl throughout the school day."
+      },
+      {
+        "name": "KHERI OREOLUWA",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Kheri co- operative and open to suggestions during learning. She is a positive member of the class and a hard worker. I have thoroughly enjoyed having her in my class this term. She actively participates in skating activities.",
+        "competencies": "She has demonstrated the ability to approach challenges with positivity while assessing feasible solutions.",
+        "values": "Kheri is kind and enthusiastic during communications."
+      },
+      {
+        "name": "KLOE WANGECI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Kloe is a determined and humble learner. She displays consistent effort and perseverance in all subjects. She interacts respectfully with others and contributes positively to group work. She actively participates in outdoor activities.",
+        "competencies": "Kloe engages thoughtfully in class activities using reasoning and creativity to solve tasks. She demonstrates confidence when sharing ideas and a willingness to explore new ways of learning.",
+        "values": "Kloe practices kindness, patience and gratitude daily. She remains humble in success and respectful in communication with others."
+      },
+      {
+        "name": "LENNIX MWANGI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Lennix is empathetic and a courteous learner. He is consistently completing his classwork on time. He is encouraged to be more thorough with his work. He actively participates in swimming.",
+        "competencies": "Lennix has developed an ability to use digital devices effectively to retrieve information during learning with ease.",
+        "values": "Lennix is humble and kind while interacting with fellow learners."
+      },
+      {
+        "name": "LEO GITONGA",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "",
+        "competencies": "",
+        "values": ""
+      },
+      {
+        "name": "LORAINE KEMUNTO",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Loraine is a cheerful and cooperative learner. She completes tasks assigned to her regularly. She strives to reach her potential in all the learning areas. She participates actively in swimming and demonstrates teamwork and discipline.",
+        "competencies": "Loraine has demonstrated the ability to express her opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Loraine is a responsible and loving learner, he show cases leadership."
+      },
+      {
+        "name": "MALCOM MUIGAI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Malcom is humorous and social learner. He is always looking out to be helpful during learning. He is encouraged to practice more on word formation and shaping of letters. He participates actively in swimming and demonstrates teamwork and discipline.",
+        "competencies": "Malcom manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Malcom is loving and respectful towards everyone during learning."
+      },
+      {
+        "name": "MARK DAVID MAKORI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Mark is a confident and energetic learner. He is open to suggestions. He needs encouragement to improve on work completion and neatness. He participates actively in tennis and demonstrates teamwork and discipline.",
+        "competencies": "Mark has developed the ability to operate and enjoy learning using digital devices. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Mark is confident and active during learning."
+      },
+      {
+        "name": "MATHEW TUMUTI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Mathew is a cheerful and curious learner. He has consistently shown a deep understanding of all the strands covered this term. He actively participates in swimming soccer and chess activities.",
+        "competencies": "Mathew manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Mathew is loving and always willing to share knowledge with others."
+      },
+      {
+        "name": "NATASHA ANGEL",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Natasha is a kind and honest learner. She completes her work on time. She actively participates in tennis.",
+        "competencies": "Natasha has developed the ability to express her opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Natasha is loving and kind –hearted."
+      },
+      {
+        "name": "NATHAN KIPLIMO",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Nathan is a cheerful and cooperative learner. He completes tasks assigned to him regularly. He strives to reach his potential in all the learning areas. He actively participates in skating soccer activities.",
+        "competencies": "Nathan has demonstrated the ability to express his opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Nathan is a responsible and loving learner especially while working with other learners."
+      },
+      {
+        "name": "NEEMA MUNGUTI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Neema is a cheerful and cooperative learner. She completes tasks assigned to her regularly. She strives to reach her potential in all the learning areas. She actively participates in outdoor activities.",
+        "competencies": "Neema has demonstrated the ability to express her opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Neema is a responsible and loving learner, she show cases leadership."
+      },
+      {
+        "name": "NYLA SIVANTOI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Nyla is a committed and determined learner. She carries out tasks assigned to her with minimal supervision. Her dedication to learning is commendable. She actively participates in dance, violin and swimming lessons.",
+        "competencies": "Nyla has developed the ability to express her opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Nyla is responsible and loving. She executes any task given to her and is able to lead a group."
+      },
+      {
+        "name": "ORDELL MUNENE",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Ordell is a confident and energetic learner. He is accountable for actions and dedicated to growth. He needs to be encouraged to wind up his classwork on time. He participates actively in chess, swimming, and soccer and demonstrates teamwork.",
+        "competencies": "Ordell has enjoyed engaging in safe, respectful and effective digital interactions during learning.",
+        "values": "Ordell is kind-hearted and loving."
+      },
+      {
+        "name": "SALMAH GLORY",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Salmah is an ambitious and diligent learner who consistently performs above expectations. She works independently and remains well-organized during the lessons. She participates actively in swimming and tennis and demonstrates teamwork and discipline.",
+        "competencies": "Salmah confidently expresses ideas, collaborates effectively during group work, and applies knowledge in real-life contexts, showing creativity and adaptability.",
+        "values": "Salmah  is a responsible and loving learner, she show cases leadership."
+      },
+      {
+        "name": "SHAWN NDIRANGU",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Shawn is humorous and social learner. He is always looking out to be helpful during learning. He is encouraged to practice more on word formation and shaping of letters. He participates actively in chess, swimming and soccer and demonstrates teamwork.",
+        "competencies": "Shawn manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Shawn is loving and respectful towards everyone during learning."
+      },
+      {
+        "name": "SKYE ABBY",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Skye is a cheerful and energetic learner. She actively participates in-group activities and her classroom performance has improved. She actively participates in skating and swimming.",
+        "competencies": "Skye has developed the ability to express her opinions and concerns effectively and confidently while interacting with others.",
+        "values": "Skye is a loving learner who embraces her classmates."
+      },
+      {
+        "name": "TAMALIA WAMUYU",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Tamalia is open to learning and a cheerful learner with the willingness to acquire knowledge.\nShe is confident and open to suggestions. She completes her work on time. She actively participates in swimming activities.",
+        "competencies": "Tamalia has enjoyed calculating and solving mathematical problems actively as we learn new concepts.",
+        "values": "Tamalia is calm and self-controlled during learning."
+      },
+      {
+        "name": "TAYLAN NJOROGE",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Taylan is a determined and industrious learner. He prioritizes responsibilities in order to meet goals. He completes his work regularly. He participates actively in piano lessons and outdoor activities.",
+        "competencies": "Taylan analyzes and evaluates information to come up with a solution. He manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Taylan is a kind and honest learner and sets a good example."
+      },
+      {
+        "name": "TEDDY MWANGI",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Teddy is an active and energetic learner. He has shown great improvement in all learnings areas. He actively participates in soccer. He is encouraged to work more independently.",
+        "competencies": "Teddy reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences.",
+        "values": "Teddy is a loving learner and works well with other learners."
+      },
+      {
+        "name": "TEHILAH ERIKA",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Erika is an active and energetic learner. Her performance is approaching expectation. She needs to be encouraged to work more independently and complete her work on time. She participates actively in ballet, piano lessons and tennis.",
+        "competencies": "Erika reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences. She enjoys show casing talents and abilities.",
+        "values": "Erika is cooperative and loving especially while interacting with her peers."
+      },
+      {
+        "name": "TEHILAH WAITHIRA",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Tehillah is a determined and enthusiastic learner. She has demonstrated a strong capacity for critical thinking and problem solving, which has greatly contributed to her academic success this term.  She actively participates in swimming.",
+        "competencies": "Tehillah manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Tehillah is cooperative and loving especially while interacting with her peers."
+      },
+      {
+        "name": "TRINITY MBAIRE",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Trinity is a self- conscious and determined learner. She is approachable and co - operative during learning. She completes her work on time. She actively participates in outdoor activities.",
+        "competencies": "Trinity has demonstrated the ability to easily put into practice concepts taught in class during the learning process.",
+        "values": "Trinity is loving and respectful towards everyone during learning."
+      },
+      {
+        "name": "VALERIE SHANGWE",
+        "stream": "YELLOW",
+        "teacher": "TR.LUCY N.",
+        "performance": "Valerie is kind and self-disciplined. She is articulate and goal oriented, however she is encouraged to complete her classwork on time. She actively participates in violin.",
+        "competencies": "Valerie has learnt to effectively embrace new concepts taught on playing violin as a musical instrument as a core curricular activity on skill acquisition and talent nurturing.",
+        "values": "Valerie is self-controlled and determined."
+      },
+      {
+        "name": "ZEMIRAH KATHURE",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Zemirah is a determined and hardworking learner. She listens attentively and makes solid effort to avoid distractions that could interrupt the learning process.  She completes her work regularly. She actively participates in chess.",
+        "competencies": "Zemirah reasons rationally on challenging tasks to provide viable solutions when interacting with various learning experiences.",
+        "values": "Zemirah is a loving and peaceful learner always active in class discussions."
+      },
+      {
+        "name": "JAYSON MWANGI",
+        "stream": "RED",
+        "teacher": "TR.LUCY N.",
+        "performance": "Jayson is a kind-hearted and loving learner. He participates actively in swimming and soccer and demonstrates teamwork and discipline.",
+        "competencies": "Jayson manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Jayson is friendly and kind to others."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "ABIGAEL WANGUI",
+        "stream": "RED"
+      },
+      {
+        "name": "AGATHA WEND0",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ALVIN CHEGE",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "AMARI MWINZI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ARIANA ZURI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ARVIN NDARUA",
+        "stream": "RED"
+      },
+      {
+        "name": "BLESSING MAKENA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "BONARERI OCHENGO",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "CARL KAMAU",
+        "stream": "RED"
+      },
+      {
+        "name": "DAVID JABARI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ELLA HADASSAH",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ESTHER GATHONI",
+        "stream": "RED"
+      },
+      {
+        "name": "ETHAN MURIMI",
+        "stream": "RED"
+      },
+      {
+        "name": "EUPHRATES TRIUMPH",
+        "stream": "RED"
+      },
+      {
+        "name": "GOLD OMONDI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "HAZEL NJOKI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ISRAELLA WAITHERA",
+        "stream": "RED"
+      },
+      {
+        "name": "IVANNA WANJIRU",
+        "stream": "RED"
+      },
+      {
+        "name": "JAHEIM MUTUKU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JAYLEN HARRY",
+        "stream": "RED"
+      },
+      {
+        "name": "JESSE MUIGAI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JOANNA MURINGE",
+        "stream": "RED"
+      },
+      {
+        "name": "JULIESTEVENS OFUYA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JUSTIN GICHICHI",
+        "stream": "RED"
+      },
+      {
+        "name": "JYSON MUNENGE",
+        "stream": "RED"
+      },
+      {
+        "name": "KAMSI OKAFOR",
+        "stream": "RED"
+      },
+      {
+        "name": "KHERI OREOLUWA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "KLOE WANGECI",
+        "stream": "RED"
+      },
+      {
+        "name": "LENNIX MWANGI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LEO GITONGA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LORAINE KEMUNTO",
+        "stream": "RED"
+      },
+      {
+        "name": "MALCOM MUIGAI",
+        "stream": "RED"
+      },
+      {
+        "name": "MARK DAVID MAKORI",
+        "stream": "RED"
+      },
+      {
+        "name": "MATHEW TUMUTI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "NATASHA ANGEL",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "NATHAN KIPLIMO",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "NEEMA MUNGUTI",
+        "stream": "RED"
+      },
+      {
+        "name": "NYLA SIVANTOI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ORDELL MUNENE",
+        "stream": "RED"
+      },
+      {
+        "name": "SALMAH GLORY",
+        "stream": "RED"
+      },
+      {
+        "name": "SHAWN NDIRANGU",
+        "stream": "RED"
+      },
+      {
+        "name": "SKYE ABBY",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TAMALIA WAMUYU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TAYLAN NJOROGE",
+        "stream": "RED"
+      },
+      {
+        "name": "TEDDY MWANGI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TEHILAH ERIKA",
+        "stream": "RED"
+      },
+      {
+        "name": "TEHILAH WAITHIRA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TRINITY MBAIRE",
+        "stream": "RED"
+      },
+      {
+        "name": "VALERIE SHANGWE",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ZEMIRAH KATHURE",
+        "stream": "RED"
+      }
+    ]
+  },
+  "Grade 3": {
+    "comments": [
+      {
+        "name": "ADRIEL SAMUEL",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Adriel is thoughtful and cheerful. He is outspoken and open to suggestions in class. He also embraces all learning areas and follows instructions carefully. He brings a positive attitude and a smile to the classroom, making a joy to teach him. Encouraged to have intensive reading in Kiswahili.",
+        "competencies": "Adriel worked well with classmates and shares ideas in the learning process.",
+        "values": "He cooperates with others during group activities and discussion."
+      },
+      {
+        "name": "ALBA SELAH",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Alba is a confident learner who is very observant and inquisitive. She enjoys communicating in Kiswahili, which has positively boosted her performance  in the learning  area. Alba's  performance is  exceeding expectations. She enjoys swimming lessons.",
+        "competencies": "She is curious and always wants to know more about how and why things happen.",
+        "values": "She shows empathy when interacting with others."
+      },
+      {
+        "name": "AVERY ASIYO",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Avery is a determined and enthusiastic learner. He has developed consistent working habits throughout the term. He participates actively in swimming and soccer. He consistently exceeds expectations.",
+        "competencies": "Avery manipulates computers and digital devices with ease to get useful information as instructed.",
+        "values": "Avery is independent minded and respectful."
+      },
+      {
+        "name": "BERNICE WANGU AKUBE",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Bernice takes her time to complete tasks, which allows her to produce neat and careful work. She has shown great improvement in all learning areas. Bernice is meeting expectations. Bernice enjoys swimming.",
+        "competencies": "She demonstrates strong self-assurance in her abilities",
+        "values": "Bernice is ambitious about what she hopes to become in the future."
+      },
+      {
+        "name": "CALVIN MAINA",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Calvin is determined and curios. He performs at average level and understands concepts when explained clearly. He completes his work though neatness and organization should be improved. He is a passionate football striker. More practice required in specific sub strands in Mathematics. In addition, he should consistently adhere to classroom rules and show respect to peers and teachers for better performance.",
+        "competencies": "Calvin attempts to solve simple problems with guidance.",
+        "values": "His cooperative nature makes him a positive influence in class."
+      },
+      {
+        "name": "CELINE MUGURE",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Celine is a cheerful and curious learner. She has shown improvement of her working habits when interacting with various learning activities. She is encouraged to complete her work on time which will propel her to exceeding expectations. She enjoys swimming and dance lessons.",
+        "competencies": "She actively participates in group discussions and hands on activities.",
+        "values": "Celine is a go-getter who strives to do her best."
+      },
+      {
+        "name": "CHARLOTTE WANJA",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Charlotte is a friendly and collected learner. She has shown resilience when handling her tasks in class. This has helped improve her performance and view of concept learnt in the classroom. She has good work completion and organization. Commendable dedication especially in Mathematics activities. She is an active member of the dance club.",
+        "competencies": "Charlotte shows confidence when completing work independently.",
+        "values": "She treats her peers with kindness and politeness."
+      },
+      {
+        "name": "ELLAH NJERI",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Ellah is a collected and agreeable learner. She has shown steady progress and improvement in her learning areas. Her work presentation is satisfactory. Her behavior is good and attention has improved. Despite her efforts, there still seems to be struggles in her tasks. With continued practice over the holiday we hope to see more improvement in the next term.",
+        "competencies": "Ellah shows willingness to improve and respond positively to feedback.",
+        "values": "She consistently takes part in class tasks."
+      },
+      {
+        "name": "FABIANA NAMUNYAK",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Fabiana is polite and obedient. Though reserved, she communicates her thoughts confidently. She demonstrates excellent behaviour. She needs to be encouraged to match up her pace with amount of work given. She needs continued support and guidance to improve her concentration span. She is meeting expectations in academics. She enjoys swimming.",
+        "competencies": "She is law-abiding and respectful to rules.",
+        "values": "She shows compassion, kindness, and empathy toward others."
+      },
+      {
+        "name": "GABRIEL MACHARIA",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Gabriel demonstrates high discipline at all times. He exceeds expectations in his performance. He is passionate about drawing and uses his free time productively to practice his talent. He occasionally shows mother-",
+        "competencies": "He works harmoniously with his peers.",
+        "values": "He shows obedience and respect for authority."
+      },
+      {
+        "name": "GABRIELLA WAMBUI",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Gabriella adapts easily to tasks and challenges. She is determined and has shown great potential to excel academically. She is exceeding expectations in all learning areas. She is encouraged to make a choice on her preferred extra- curricular activities.",
+        "competencies": "She shows confidence in her abilities and performance.",
+        "values": "She demonstrates strong personal initiative and requires minimal supervision."
+      },
+      {
+        "name": "GEORGE MBUGUA",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "George is an industrious and well-motivated learner. He demonstrates above average performance and participates actively in learning activities. He completes assignments on time and maintains neat work.",
+        "competencies": "George works well and shares his ideas with others during class and group activities.",
+        "values": "He shows politeness and consideration to his teachers and classmates."
+      },
+      {
+        "name": "IVY MUKUHI",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Ivy is bright and dedicated She performs above average in class activities. She is keen while performing tasks thus presents neat and well-organized work. he is well disciplined. She has become more outspoken and express her ideas and feelings well.",
+        "competencies": "Ivy shows confidence in completing tasks independently.",
+        "values": "She shows love to her peers by helping out when help is needed and takes care of her work."
+      },
+      {
+        "name": "JANAYA WAMBUI",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Janaya is consistent in completing both classwork and homework on time, and her work is well done. She is exceeding expectations in her performance. She is encouraged to continue practicing to improve the legibility of her handwriting. She enjoys playing basketball.",
+        "competencies": "She makes informed judgments when solving problems.",
+        "values": "She demonstrates courage in expressing her ideas and when interacting with others."
+      },
+      {
+        "name": "JARED WAIGURU",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Jared is a calm and determined learner. He has shown good dedication to his work and has a fantastic attitude towards school. He does his work with minimal supervision and submits in good time. He is artistic, as noted in the diagrams he draws during learning. Encouraged to manage his emotions.",
+        "competencies": "Jared is outspoken. He speaks eloquently. This helps facilitators and peers to understand his feelings.",
+        "values": "He is fair and kindhearted, especially when interacting with peers."
+      },
+      {
+        "name": "JASON MUCHOKI",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Jason is an energetic and agreeable learner who enjoys both academic and co-curricular activities. He has shown steady improvement in his academics and has taken full control of his classwork and behavior. It’s been a pleasure to see Jason’s growth over the term, With his ongoing commitment, he will achieve great things.",
+        "competencies": "Jason comfortably uses his school tablet to write his name, create a folder, use bullets draw and colour objects.",
+        "values": "He is kind and respectful to all. He is helpful in class."
+      },
+      {
+        "name": "JASON PRINCE",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Jason is confident, considerate and responsible. He has demonstrated a strong capacity for critical thinking and problem solving, which has greatly contributed to his academic success this term. He participates actively in soccer and he demonstrates teamwork.",
+        "competencies": "Prince has demonstrated the ability to think analytically to solve problems at hand. He manipulates computers and other digital devices with ease to get useful information as instructed",
+        "values": "Jason is kind and responsible."
+      },
+      {
+        "name": "JEREMY KIAMA",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Jeremy's performance is exemplary across learning areas. He is exceeding expectations. With guidance and reminders, he maintains good handwriting and produces impressive work under supervision. He enjoys playing soccer.",
+        "competencies": "He expresses himself clearly and confidently.",
+        "values": "He communicates his ideas fairly and with clarity."
+      },
+      {
+        "name": "JOHN MUNGAI",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "John performs excellently in academics and quickly understands new concepts. He is exceeding expectations. He is encouraged to be friendly",
+        "competencies": "He manipulates computers and demonstrates advanced computer skills compared to his peers.",
+        "values": "He is apologetic when he makes mistakes."
+      },
+      {
+        "name": "JONATHAN NDIRANGU",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Jonathan is a lively and confident learner, He occasionally demonstrates good- handwriting and enjoys swimming and playing soccer. Ndirangu needs improvement on following class rules, completing work and respecting authority. Continued effort to respect the learning environment is necessary He greatly enjoys soccer and swimming.",
+        "competencies": "He interacts well with his peers especially during out-door activities.",
+        "values": "He is confident in expressing himself."
+      },
+      {
+        "name": "KIMATHI GATHURA",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Kimathi is eager to explore new experiences and learn more. His performance is meeting expectations. He has a good handwriting but needs to improve on staying focused during class and on tasks to foster better attention. His passion for soccer is admirable",
+        "competencies": "He enjoys exploring new ideas and manipulating digital devices for learning.",
+        "values": "He is caring and always willing to help his classmates."
+      },
+      {
+        "name": "LEILA KIBE",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Leila is a cheerful and determined learner. She is able to handle most task with some guidance. Her behavior is good, she is respectful to both teachers and peers.",
+        "competencies": "Leila can express ideas fairly well and works cooperatively in group activities.",
+        "values": "She shows politeness and listens to others during class activities."
+      },
+      {
+        "name": "LEILANI SAYO",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Leilani is a composed and attentive learner. She works diligently in all learning areas. She socializes freely and harmoniously with classmates. It has been challenging for Sayo’s Mathematics, it would be helpful to spend some time over the holiday focusing on this.",
+        "competencies": "Leilani engages willingly in group discussion and shares her ideas respectfully.",
+        "values": "She shows responsibility by completing assigned duties on time and maintaining honesty in classwork."
+      },
+      {
+        "name": "LEVI MWENDA",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Levi is a curious, friendly and inquisitive learner. He approaches school life with positivity. He handles his tasks keenly and has good work completion. He is an excellent footballer.\nHowever, continued effort to respect the learning environment is necessary.",
+        "competencies": "Levi exhibits critical thinking thoughtful responses to questions and finding creative ways to solve problems.",
+        "values": "He displays respect and empathy through polite communication and willingness to help others."
+      },
+      {
+        "name": "LIAM NJOROGE",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Liam meets expectations academically. He needs to work on improving the pace and legibility of his handwriting. He is encouraged to remain focused and settle down to complete tasks for better results. He actively participates in swimming and soccer.",
+        "competencies": "He works well with others during group discussions.",
+        "values": "He is truthful when reporting situations or giving feedback or opinions."
+      },
+      {
+        "name": "MALIK KIMUYA",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Malik is a cooperative learner who participates actively in class and group tasks. He shows commitment to his work, does his tasks with minimal supervision. He has good attitude and mastery of Mathematics concepts, however needs more practice and patience while handling the sums. He is a teachable learner.",
+        "competencies": "He is well conversant with digital devices. Encouraged to use them in research to support learning.",
+        "values": "Malik upholds integrity through honesty and fulfilling responsibilities with less supervision."
+      },
+      {
+        "name": "MARK ALVIN",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Mark is generally quiet and sensitive to what happens around him. He meets academic expectations and responds positively to encouragement and praise. He writes in good handwriting. Mark enjoys playing chess. He has been a joy to teach this term.",
+        "competencies": "He is self-driven and puts in extra effort when motivated.",
+        "values": "He communicates respectfully to others."
+      },
+      {
+        "name": "MBUGUA GACHIRI",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Mbugua is a friendly and energetic learner. His positive attitude towards school and his natural curiosity has been a joy to witness. He is always eager to learn new things. In regards to classwork and extended, his work completion and submission is amazing. Encouraged to refrain from negative peer pressure and have more focus on his academics.",
+        "competencies": "Mbugua has good communication skills. He expresses his thoughts and feeling more clearly without hesitation.",
+        "values": "He is a helpful learner during learning process."
+      },
+      {
+        "name": "MICHAEL SAMUEL",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Michael is a bright and inquisitive learner. He shows determination towards classwork and group activities. He is learning to follow rules and instructions promptly. He produces neat work, has passion for Music and soccer. He is a good team player and leadership skills.",
+        "competencies": "Michael demonstrates self-management and collaboration through organized work habits and team work.",
+        "values": "He displays teamwork and respect for others."
+      },
+      {
+        "name": "NATHAN EDWARD",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Nathan performs well academically, Meeting expectations. However, his handwriting requires more practice to improve. He is encouraged to be more independent and avoid being easily influenced by others.",
+        "competencies": "He shows interest in innovation and creativity.",
+        "values": "He is respectful and kind."
+      },
+      {
+        "name": "RAYVON NG'ANG'A",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Rayvon is a cheerful learner. He has consistently shown a deep understanding of all strands and sub strands covered this term. He continuously seeks clarification where concept is not grasped. This has been reflected in his excellent grades. His behavior patterns have gradually improved this term. He is a dedicated striker in football and has passion for chess.",
+        "competencies": "Rayvon comfortably uses the tablet during Computer lessons. He understands the use of bullets and arrows while handling his work. He can also save his folder and shut down the gadget after working on it.",
+        "values": "He collaboratively works with his friends especially in group work and gives leading instructions to his peers. Keep it up!"
+      },
+      {
+        "name": "REIGN MACHARIA",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Reign is a curious and inquisitive learner. His work completion has been commendable. He is usually very neat and descent. He participates actively in group activities. His class attention and behaviour is good though can vary. Encouraged to remain focused throughout.",
+        "competencies": "He works well with the school tablet, he is able to type, draw, colour objects and save his work in a folder.",
+        "values": "He works well with others in group tasks."
+      },
+      {
+        "name": "RUBY KENA",
+        "stream": "YELLOW",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Ruby consistently performs well in class. She completes tasks promptly and produces neat work. She asks questions out of curiosity in the learning process showing interest in learning. She has learnt to be emotionally stable.",
+        "competencies": "Ruby thinks carefully through her work and finds solutions to tasks.",
+        "values": "Ruby is an honest learner. She follows rules and instructions given."
+      },
+      {
+        "name": "SAMARA MUMBI",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Samara is a cheerful learner who writes neatly and completes her tasks\nwell. She always strives to do her best and enjoys writing creative stories, she meets expectations in all other learning areas. She participates actively in dance.",
+        "competencies": "She demonstrates persistence and commitment in completing tasks.",
+        "values": "She treats everyone with kindness and love."
+      },
+      {
+        "name": "SARAH QUEEN",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Sarah is a cheerful and motivated learner who performs at an average yet improving level across most learning areas. She has shown good time management in class and carries out her tasks responsibly. She promptly and neatly completes her work on time. She is an interesting learner. She is becoming more outspoken and expressive.",
+        "competencies": "Sarah shows good thinking skills when doing tasks. She actively and respectfully participates in class discussions.",
+        "values": "She is a helpful learner during learning process."
+      },
+      {
+        "name": "SHANAYAH NYAMBURA",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Shanaya is confident and outspoken. She requires close monitoring to complete assigned tasks and is encouraged to be more independent in her decisions. Her work is always neat. She exceeds expectations in academics. She actively participates in swimming and dance.",
+        "competencies": "She interacts well with peers and participates actively in group work.",
+        "values": "She shows empathy and cares deeply about her friends."
+      },
+      {
+        "name": "SHANNEL KURIA",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Shannell is an agreeable and joyful learner. She shows moderate understanding of concepts and participates in class activities. Her behavior is gradually improving. She likes participating in swimming activities. Encouraged to remain focused and avoid distraction.",
+        "competencies": "Shannell believes in her potential and ability to express her ideas well.",
+        "values": "She takes keen interest while participating in assigned duties."
+      },
+      {
+        "name": "SOPHIA WACUKA",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Sophia is a cheerful learner who shows enthusiasm in all school activities. Her intensive reading and research work has brought a good impact to her performance. She shows above performance and is always ready to learn .Her work completion and organization has been superb this term. Good improvement in her behavioral patterns has been noted.",
+        "competencies": "Sophia interacts and works well with others.",
+        "values": "Sophia takes care of assignments and tasks given."
+      },
+      {
+        "name": "TAMARA MAKENA",
+        "stream": "YELLOW",
+        "teacher": "TR.CLARIS",
+        "performance": "Tamara is a focused and expressive learner who embraces academic challenges with enthusiasm. She shows a strong desire to learn and consistently delivers work of commendable quality. Her excellent concentration, organization and planning skills have stood out throughout the time.",
+        "competencies": "Tamara shows willingness and interest in learning new things.",
+        "values": "She cooperates well with others in class."
+      },
+      {
+        "name": "TAMARA VANESSA",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Tamara demonstrates exemplary performance in all the learning areas. She actively enjoys swimming. She writes neatly, completes her work diligently, and shows leadership potential when guided.",
+        "competencies": "She analyzes problems and suggests appropriate solutions.",
+        "values": "She is responsible and dependable in completing tasks."
+      },
+      {
+        "name": "TEAIRRA WANJIKU",
+        "stream": "RED",
+        "teacher": "TR.ZEPHRINE",
+        "performance": "Teairra meets expectations in her work but experiences some difficulty in Mathematics, which has greatly improved with more practice. She is trust-worthy and handles classroom responsibilities well.  She is learning to manage her emotions more effectively. She enjoys swimming.",
+        "competencies": "She works well with others and demonstrates leadership in group activities.",
+        "values": "She shows responsibility in caring for items and assisting others."
+      },
+      {
+        "name": "THAYU GACHUNGI",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Thayu demonstrates exceptionally exceeded expectations in all the learning. He is encouraged to improve his handwriting by slowing down and following instructions carefully. He is also encouraged to maintain calmness during class activities for a better focus and not disrupting learning activities. He actively participates in swimming.",
+        "competencies": "Thayu expresses her opinions more confidently and reasons independently when interacting with learning experiences.",
+        "values": "He is curious and enthusiast."
+      },
+      {
+        "name": "YASMIN RAQUEL",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Yasmin is kind hearted and honest. He completes his work on time and his dedication to learning is commendable. He participates actively in skating and outdoor activities.",
+        "competencies": "Raquel manipulates computers and other digital devices with ease to get useful information as instructed.",
+        "values": "Yasmin is friendly and helpful to others."
+      },
+      {
+        "name": "Israel Korir Oloo",
+        "stream": "RED",
+        "teacher": "TR.CLARIS",
+        "performance": "Israel is a friendly and collected learner. He strives to completing his tasks with guidance. His work acceptable and behaviour is generally well-mannered. He has great passion for football.",
+        "competencies": "Israel demonstrates awareness of rules and responsibilities.",
+        "values": "He cooperates well with his classmates."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "ADRIEL SAMUEL",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ALBA SELAH",
+        "stream": "RED"
+      },
+      {
+        "name": "AVERY ASIYO",
+        "stream": "RED"
+      },
+      {
+        "name": "BERNICE WANGU AKUBE",
+        "stream": "RED"
+      },
+      {
+        "name": "CALVIN MAINA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "CELINE MUGURE",
+        "stream": "RED"
+      },
+      {
+        "name": "CHARLOTTE WANJA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "ELLAH NJERI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "FABIANA NAMUNYAK",
+        "stream": "RED"
+      },
+      {
+        "name": "GABRIEL MACHARIA",
+        "stream": "RED"
+      },
+      {
+        "name": "GABRIELLA WAMBUI",
+        "stream": "RED"
+      },
+      {
+        "name": "GEORGE MBUGUA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "IVY MUKUHI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JANAYA WAMBUI",
+        "stream": "RED"
+      },
+      {
+        "name": "JARED WAIGURU",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JASON MUCHOKI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "JASON PRINCE",
+        "stream": "RED"
+      },
+      {
+        "name": "JEREMY KIAMA",
+        "stream": "RED"
+      },
+      {
+        "name": "JOHN MUNGAI",
+        "stream": "RED"
+      },
+      {
+        "name": "JONATHAN NDIRANGU",
+        "stream": "RED"
+      },
+      {
+        "name": "KIMATHI GATHURA",
+        "stream": "RED"
+      },
+      {
+        "name": "LEILA KIBE",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LEILANI SAYO",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LEVI MWENDA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "LIAM NJOROGE",
+        "stream": "RED"
+      },
+      {
+        "name": "MALIK KIMUYA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "MARK ALVIN",
+        "stream": "RED"
+      },
+      {
+        "name": "MBUGUA GACHIRI",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "MICHAEL SAMUEL",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "NATHAN EDWARD",
+        "stream": "RED"
+      },
+      {
+        "name": "RAYVON NG'ANG'A",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "REIGN MACHARIA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "RUBY KENA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "SAMARA MUMBI",
+        "stream": "RED"
+      },
+      {
+        "name": "SARAH QUEEN",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "SHANAYAH NYAMBURA",
+        "stream": "RED"
+      },
+      {
+        "name": "SHANNEL KURIA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "SOPHIA WACUKA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TAMARA MAKENA",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "TAMARA VANESSA",
+        "stream": "RED"
+      },
+      {
+        "name": "TEAIRRA WANJIKU",
+        "stream": "RED"
+      },
+      {
+        "name": "THAYU GACHUNGI",
+        "stream": "RED"
+      },
+      {
+        "name": "YASMIN RAQUEL",
+        "stream": "RED"
+      }
+    ]
+  },
+  "Grade 4": {
+    "comments": [
+      {
+        "name": "Adrian wanjohi",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows confidence in learning, collaborates well with classmates, and demonstrates responsibility in assigned tasks.",
+        "values": "Shows improving responsibility, respect and self-discipline in class"
+      },
+      {
+        "name": "Alma wanjiru",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Communicates ideas effectively, shows creativity in assignments, and applies digital literacy skills appropriately in learning",
+        "values": "Demonstrates responsibility, cooperation and respect in her daily learning activities."
+      },
+      {
+        "name": "Amanda Faith",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She demonstrates creativity and imagination when expressing ideas in class activities",
+        "values": "She is a humble and kind girl who respects her peers."
+      },
+      {
+        "name": "Annika chibai",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates strong learning-to-learn skills, communicates well in class, and shows responsibility as a good citizen",
+        "values": "Demonstrates honesty, responsibility and respect in her school work and interactions."
+      },
+      {
+        "name": "Azariah Ndwiga",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates improving self-efficacy, participates actively in discussions, and applies critical thinking skills.",
+        "values": "Shows responsibility, cooperation, and respect in his daily activities."
+      },
+      {
+        "name": "Azariah wega",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates strong communication skills, works well in collaboration with peers, and applies critical thinking effectively during learning activities",
+        "values": "Demonstrates strong values of responsibility, respect and integrity in all learning activities and interactions"
+      },
+      {
+        "name": "Baraka Mutuma",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows confidence in expressing ideas, demonstrates teamwork through collaboration, and applies problem-solving skills when faced with challenges",
+        "values": "Shows improving responsibility, respect, and self-discipline in class"
+      },
+      {
+        "name": "Brayden Murigi",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows excellent self-efficacy, participates confidently in group tasks, and displays growing problem-solving skills in different learning areas",
+        "values": "Shows commendable responsibility, cooperation, and honesty in both individual and group tasks."
+      },
+      {
+        "name": "Bryden Kabiru",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates critical thinking when solving tasks, works well with peers, and shows confidence in expressing ideas.",
+        "values": "Demonstrates responsibility, honesty and cooperation in his work"
+      },
+      {
+        "name": "Bryson Nganga",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Bryson applies knowledge creatively and collaborates effectively during practical tasks",
+        "values": "Bryson respects others and shows honesty, compassion, and patience. He is dependable and always ready to assist others"
+      },
+      {
+        "name": "Christian Ndungu",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Ndungu engages in class discussions with curiosity and asks thoughtful questions",
+        "values": "Ndungu acts with kindness, patience, and respect toward others. He follows instructions diligently and appreciates guidance"
+      },
+      {
+        "name": "Christian Taji",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Christian shows great enthusiasm in co-curricular activities, particularly chess and soccer, where he continues to develop his skills and teamwork.",
+        "values": "He shows respect for others and approaches his learning with humility and understanding."
+      },
+      {
+        "name": "Crevis Ramah Ngobe",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Communicates ideas effectively, demonstrates creativity, and shows developing problem-solving skills.",
+        "values": "Demonstrates developing responsibility, cooperation and respect with guidance."
+      },
+      {
+        "name": "Danniyal Hassan",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates strong participation in class, applies critical thinking, and shows good teamwork and communication skills.",
+        "values": "Demonstrates responsibility, cooperation and respect in his school activities."
+      },
+      {
+        "name": "Darel Kiki",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Darel demonstrates attention to detail and explores different media with enthusiasm especially while exploring digital devices",
+        "values": "He shows love and respect to his peers and cooperative in class."
+      },
+      {
+        "name": "Dylan Gichuki",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates responsibility in learning, applies creativity in tasks, and shows confidence in class participation.",
+        "values": "Shows improving responsibility, respect and cooperation in class."
+      },
+      {
+        "name": "Dylan Maina",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "He also demonstrates communication and collaboration by building positive relationships and actively participating with peers",
+        "values": "He acts with kindness, patience, and respect toward others. He follows instructions diligently and appreciates guidance."
+      },
+      {
+        "name": "Ellah Muigai",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Communicates confidently, shows creativity in tasks, and demonstrates positive learning-to-learn habits.",
+        "values": "Shows strong empathy, respect, and responsibility in her interactions."
+      },
+      {
+        "name": "Elysia njoki",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows growth in digital literacy, communicates ideas well, and demonstrates teamwork during group activities",
+        "values": "Shows responsibility, cooperation, and honesty in her school work."
+      },
+      {
+        "name": "Emmanuella Njoki",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She collaborates effectively with peers and participates energetically in swimming and violin classes, all while maintaining a respectful attitude toward others",
+        "values": "She respects school rules and treats everyone fairly, showing gratitude for guidance and help."
+      },
+      {
+        "name": "Ethan Mwangi",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "– Exhibits creativity in tasks, communicates ideas clearly, and demonstrates good learning-to-learn skills through active participation",
+        "values": "Demonstrates growing responsibility, respect and cooperation during class activities."
+      },
+      {
+        "name": "Farell Terrence",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Communicates clearly during discussions, shows responsibility as a citizen, and demonstrates strong learning-to-learn skills",
+        "values": "– Shows developing responsibility, respect and cooperation in class activities."
+      },
+      {
+        "name": "Gift Kamau",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Gift has developed basic digital literacy skills with support. He is learning to engage with educational programs and responds well to visual and interactive tools",
+        "values": "Gift respects others and shows honesty, compassion, and patience. He is dependable and always ready to assist others"
+      },
+      {
+        "name": "Jameliah Njura",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates good use of digital literacy, shows responsibility in tasks, and works well with peers.",
+        "values": "Shows improving responsibility, respect, and self-discipline in class."
+      },
+      {
+        "name": "Janice Wambui",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She also demonstrates communication and collaboration by building positive relationships and actively participating with peers.",
+        "values": "Janice consistently demonstrates responsibility, diligence, humility, respect, and integrity in her work and interactions with others"
+      },
+      {
+        "name": "Jason Luke",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows good collaboration skills, demonstrates problem-solving ability, and communicates ideas clearly",
+        "values": "Demonstrates cooperation, responsibility and respect in learning activities."
+      },
+      {
+        "name": "Jayden Joash",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Dylan engages in class discussions with curiosity and asks thoughtful questions.",
+        "values": "Joash is a meek and respectful learner especially to his peers."
+      },
+      {
+        "name": "Jayden Mutimu",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "He shows good creativity and good imagination in expressing ideas in unique ways.",
+        "values": "He is learning to be more responsible and respectful when associating with his peers."
+      },
+      {
+        "name": "John Ngugi",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates responsibility and discipline, works well in teams, and shows developing critical thinking skills",
+        "values": "Demonstrates responsibility, respect and cooperation during class activities."
+      },
+      {
+        "name": "Kayla Nduta",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates responsibility in learning, applies digital literacy, and communicates ideas confidently.",
+        "values": "Shows strong responsibility, respect and self-discipline in her work."
+      },
+      {
+        "name": "Ken Samuel wagereka",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows creativity in completing tasks, collaborates well with peers, and demonstrates improving self-efficacy",
+        "values": "Demonstrates responsibility, cooperation and integrity in his learning activities."
+      },
+      {
+        "name": "Leticia Wanjiru",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": ". Leticia shows growing confidence in expressing ideas and applying learning to new situations.",
+        "values": "Leticia shows honesty, obedience, and respect for others. She demonstrates patience and kindness in interactions with peers."
+      },
+      {
+        "name": "Merry Natalie Tatiana",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She engages in discussions confidently, applies reasoning in problem - solving, and she demonstrates leadership skills in group activities.",
+        "values": "Merry acts with honesty, compassion, and perseverance. He maintains self-control and promotes positive interactions among classmates"
+      },
+      {
+        "name": "Mikaella Rehema",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She demonstrates strong communication and collaboration by interacting respectfully, empathetically, and working well with others consistently",
+        "values": "demonstrates respect and empathy towards others, approaches her responsibilities with diligence and integrity."
+      },
+      {
+        "name": "Morgan kamau",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows good teamwork skills, demonstrates creativity in tasks, and applies problem-solving strategies effectively",
+        "values": "Demonstrates cooperation, responsibility and respect towards peers and teachers."
+      },
+      {
+        "name": "Nadia chebet",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "– Demonstrates good self-efficacy, participates actively in collaborative tasks, and applies problem-solving skills appropriately",
+        "values": "Demonstrates strong respect, responsibility and empathy towards others"
+      },
+      {
+        "name": "Natasha Wambui",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Natasha is a co-operative and curious learner during learning.",
+        "values": "Natasha shows honesty, obedience, and respect for others. She demonstrates patience and kindness in interactions with peers."
+      },
+      {
+        "name": "Nathan Njagi",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows creativity and originality in work, collaborates well with others, and communicates ideas clearly",
+        "values": "Demonstrates developing responsibility and honesty but is encouraged to improve on cooperation and respectful interaction with peers."
+      },
+      {
+        "name": "Nicole Nyambura",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She demonstrates good teamwork skills and cooperates with peers,.",
+        "values": "She shows integrity by doing the right thing even when not supervised"
+      },
+      {
+        "name": "Renee Sharlotte",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "She works well both independently and in teamwork, showing cooperation and empathy.",
+        "values": "Renee shows humility, honesty, and fairness in daily interactions. She treats classmates with compassion and always seeks to do what is right."
+      },
+      {
+        "name": "Rhema Wandia",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Rhema demonstrates curiosity and growing independence in learning. She applies acquired knowledge meaningfully and asks relevant questions and solve problems.",
+        "values": "Rhema displays honesty, humility, and cooperation in daily conduct. She respects others and takes correction positively"
+      },
+      {
+        "name": "Ryan Muuo",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Ryan demonstrates the ability to think critically, communicate effectively, and take initiative in solving classroom challenges",
+        "values": "He shows respect for others and approaches his learning with humility and understanding."
+      },
+      {
+        "name": "Shem Muriaigiri",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Shem applies listening, collaboration, and innovation effectively in different learning settings.",
+        "values": "Shem shows love and respect to his peers and cooperative in class."
+      },
+      {
+        "name": "Shimeah Mutugi",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Actively participates in group work, demonstrates critical thinking, and expresses ideas clearly through effective communication.",
+        "values": "Shows cooperation, respect, and responsibility during group and individual tasks."
+      },
+      {
+        "name": "Sifa Wanjiru",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows strong citizenship values, communicates effectively, and demonstrates teamwork during group activities",
+        "values": "Demonstrates respect, responsibility, and empathy towards others."
+      },
+      {
+        "name": "Stefan Gathagu",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Stefan demonstrates reasoning, communication, and problem-solving abilities.",
+        "values": "Stefan displays honesty, empathy, and self-control. He is respectful and co-operative while doing class activities."
+      },
+      {
+        "name": "Steve Benson",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Steve exhibits confidence in presentation and decision-making while performing his tasks.",
+        "values": "Steve is kind and always willing to volunteer in classroom activities."
+      },
+      {
+        "name": "Teyo Matalanga",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Teyo demonstrates creativity, and critical reasoning when solving challenges. She communicates clearly and cooperates effectively during discussions and group work.",
+        "values": "Teyo shows humility, honesty, and self-discipline. She demonstrates perseverance even when faced with challenges"
+      },
+      {
+        "name": "Tyrell Kaumah",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Shows creativity in learning activities, communicates effectively, and demonstrates responsibility in group work.",
+        "values": "Shows improving responsibility, respect and self-discipline in learning activities."
+      },
+      {
+        "name": "Victor Morgan",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "Ndungu engages in class discussions with curiosity and asks thoughtful questions",
+        "values": "Ndungu acts with kindness, patience, and respect toward others. He follows instructions diligently and appreciates guidance."
+      },
+      {
+        "name": "Zani Nganga",
+        "stream": "YELLOW",
+        "teacher": "TR. MERCY",
+        "performance": "",
+        "competencies": "He interacts respectfully with others and contributes positively to group work",
+        "values": "Zani respects others and shows honesty, compassion, and patience. He is dependable and always ready to assist others"
+      },
+      {
+        "name": "Zemirah Zuwema",
+        "stream": "RED",
+        "teacher": "TR. JUDY",
+        "performance": "",
+        "competencies": "Demonstrates responsibility and citizenship, collaborates well with others, and shows steady growth in critical thinking.",
+        "values": "Shows positive development in respect, responsibility  and empathy towards others."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "Azariah wega",
+        "stream": "RED"
+      },
+      {
+        "name": "Brayden Murigi",
+        "stream": "RED"
+      },
+      {
+        "name": "Janice Wambui",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Zemirah Zuwema",
+        "stream": "RED"
+      },
+      {
+        "name": "Emmanuella Njoki",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Christian Taji",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Morgan kamau",
+        "stream": "RED"
+      },
+      {
+        "name": "Alma wanjiru",
+        "stream": "RED"
+      },
+      {
+        "name": "Tyrell Kaumah",
+        "stream": "RED"
+      },
+      {
+        "name": "Steve Benson",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Annika chibai",
+        "stream": "RED"
+      },
+      {
+        "name": "Ethan Mwangi",
+        "stream": "RED"
+      },
+      {
+        "name": "Farell Terrence",
+        "stream": "RED"
+      },
+      {
+        "name": "Baraka Mutuma",
+        "stream": "RED"
+      },
+      {
+        "name": "Shimeah Mutugi",
+        "stream": "RED"
+      },
+      {
+        "name": "Kayla Nduta",
+        "stream": "RED"
+      },
+      {
+        "name": "Nadia chebet",
+        "stream": "RED"
+      },
+      {
+        "name": "Mikaella Rehema",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "John Ngugi",
+        "stream": "RED"
+      },
+      {
+        "name": "Stefan Gathagu",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Ken Samuel wagereka",
+        "stream": "RED"
+      },
+      {
+        "name": "Ryan Muuo",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Zani Nganga",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Merry Natalie Tatiana",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Darel Kiki",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Bryson Nganga",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Amanda Faith",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Danniyal Hassan",
+        "stream": "RED"
+      },
+      {
+        "name": "Nicole Nyambura",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Rhema Wandia",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Jason Luke",
+        "stream": "RED"
+      },
+      {
+        "name": "Ellah Muigai",
+        "stream": "RED"
+      },
+      {
+        "name": "Teyo Matalanga",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Bryden Kabiru",
+        "stream": "RED"
+      },
+      {
+        "name": "Elysia njoki",
+        "stream": "RED"
+      },
+      {
+        "name": "Azariah Ndwiga",
+        "stream": "RED"
+      },
+      {
+        "name": "Nathan Njagi",
+        "stream": "RED"
+      },
+      {
+        "name": "Shem Muriaigiri",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Adrian wanjohi",
+        "stream": "RED"
+      },
+      {
+        "name": "Renee Sharlotte",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Jameliah Njura",
+        "stream": "RED"
+      },
+      {
+        "name": "Sifa Wanjiru",
+        "stream": "RED"
+      },
+      {
+        "name": "Victor Morgan",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Christian Ndungu",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Gift Kamau",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Crevis Ramah Ngobe",
+        "stream": "RED"
+      },
+      {
+        "name": "Natasha Wambui",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Dylan Gichuki",
+        "stream": "RED"
+      },
+      {
+        "name": "Leticia Wanjiru",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Jayden Mutimu",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Jayden Joash",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "Dylan Maina",
+        "stream": "YELLOW"
+      },
+      {
+        "name": "SUBJECT RANK",
+        "stream": ""
+      }
+    ]
+  },
+  "Grade 5": {
+    "comments": [
+      {
+        "name": "ALYSSA WANGU",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Alyssa is a determined and committed learner. She works at an appropriate pace to achieve set goals. She is very creative and enjoys doing creative arts activities. Her relationship with peers is good. Her academic performance has improved compared to the previous assessment. Encouraged to settle and pay much attention during learning process.",
+        "competencies": "She eagerly seeks to understand more about concepts learnt by continuously asking questions for clarification.",
+        "values": "She is honest and respectful."
+      },
+      {
+        "name": "COMARK ONANI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Comark is an independent and reliable learner. He consistently demonstrates ability to manage his tasks effectively without constant reminders. He relates amicably with peers and actively participates in outdoor activities especially soccer. He can perform much better if he checks his work carefully during assessments.",
+        "competencies": "He demonstrates good discipline and relates well with others.",
+        "values": "He is helpful and a team player."
+      },
+      {
+        "name": "DECLAN NGATIA",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Declan is an eager and determined learner who shows a positive attitude towards acquiring new knowledge and actively participates in class activities. However, there is slight improvement in completing assigned tasks which might affect his academic progress. Encouraged to stay focused during class activities. He actively participates in soccer.",
+        "competencies": "He expresses ideas clearly through speaking and writing and uses computers efficiently and follows instructions to get useful information as prompted.",
+        "values": "He is useful and a team player."
+      },
+      {
+        "name": "DELVIN DUNCAN",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Delvin is an energetic and eager learner. He completes tasks assigned to him but with regular reminders. He is very active in outdoor activities especially soccer and swimming. An improvement has been noted in his change of behaviour but encouraged to work more independently without regular reminders.",
+        "competencies": "He uses computers efficiently and follows instructions to get useful information as prompted.",
+        "values": "He is kind and cooperative."
+      },
+      {
+        "name": "ELAM CADE",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Elam is an independent and reliable learner. He consistently demonstrates ability to manage his tasks effectively without constant reminders. He relates amicably with peers. He can perform much better if he becomes more careful with his work during assessments.",
+        "competencies": "He has developed the ability to express his opinions and concerns effectively and confidently while interacting with peers.",
+        "values": "He is responsible and helpful."
+      },
+      {
+        "name": "ELLA IMANI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Ella is a hardworking and consistent learner. She works at appropriate pace to achieve set goals. She actively participates in class discussions and demonstrates deep understanding of concepts. She collaborates well with classmates. Her academic performance has been impressive. She actively participates in basketball and swimming. Encouraged to do more revision in Kiswahili and Mathematics.",
+        "competencies": "She is a curious learner who regularly asks question on concepts learnt and reading of books to gain more knowledge and develops confidence in expressing creative ideas.",
+        "values": "She is kind and respectful."
+      },
+      {
+        "name": "ELSIE AGNES",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Elsie is a focused and determined learner. She consistently demonstrates a strong commitment to her studies. She cooperates well with the teachers and other learners. Her academic performance throughout the term has been outstanding. Encouraged to do further research on the concepts learnt so as to understand much better.",
+        "competencies": "She eagerly seeks to understand more about concepts learnt by continuously asking questions for clarification.",
+        "values": "She is kind and respectful."
+      },
+      {
+        "name": "ETHAN MURUTHI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Ethan is an energetic and enthusiastic learner. He participates actively in group and class activities. He amicably cooperates with peers and his academic performance has slightly improved. Encouraged to be more responsible in task completion without regular reminders. He is a soccer fanatic.",
+        "competencies": "He is a curious learner who seeks knowledge on concepts learnt in class.",
+        "values": "He is cooperative and a team player."
+      },
+      {
+        "name": "ETHAN SAITEMU",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Ethan is an eager and determined learner. He displays a positive attitude towards learning new concepts. He actively participates in outdoor activities and relates well with others. However, he completes tasks with regular reminders and this affects his academic performance. Encouraged to work more independently while performing assigned tasks for better understanding.",
+        "competencies": "He communicates effectively and actively participates in group activities.",
+        "values": "He is cooperative and helpful."
+      },
+      {
+        "name": "JANE WANJIRU",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Jane is a determined and eager learner. She enjoys hands on activities during groups work. She works collaboratively with peers.  Her academic performance is not to the mark but with consistent support, she can reach her full potential. Encouraged to take corrections positively especially in Mathematics and Science and Technology.",
+        "competencies": "She demonstrates good discipline and relates well with others.",
+        "values": "She is a responsible and helpful learner."
+      },
+      {
+        "name": "JASON THUO",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Jason is a focused and committed learner who consistently performs well in his studies. He demonstrates strong academic progress. He relates well with classmates. He participates well in both classroom and outdoor activities, especially soccer, making him well-rounded in co-curricular involvement.",
+        "competencies": "He actively seeks to deepen his understanding by continuously asking questions for clarification.",
+        "values": "He is kind and respectful."
+      },
+      {
+        "name": "JEREMIAH OWOMUGISHA KEITH",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Jeremiah is a cheerful and cooperative learner. He completes tasks assigned to him with minimal reminders. He strives to reach his potential in all the learning areas. His relationship with peers is good. Encouraged to seek clarification from the teachers in concepts that he did not understand.",
+        "competencies": "He has demonstrated the ability to express his opinions and concerns effectively and confidently while interacting with others.",
+        "values": "He is a responsible learner and a team player."
+      },
+      {
+        "name": "JEROME MWANGI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Jerome is a hardworking learner who shows dedication and commitment to his studies. He is progressing well academically. and actively seeks knowledge both in and out of class. Jerome participates actively in group and co-curricular activities, demonstrating strong teamwork and cooperation skills.",
+        "competencies": "He seeks knowledge both in and out of class for better understanding of what has been taught.",
+        "values": "He is honest and respectful."
+      },
+      {
+        "name": "JOSEPH KARANJA",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Joseph is an eager learner who approaches learning with a positive attitude. Academically, he is progressing steadily, particularly in Mathematics and Kiswahili. He relates well with peers. There is a great improvement noted in work completion and this is very commendable. However, he needs to be very keen while answering some questions to avoid mistakes.",
+        "competencies": "He eagerly seeks to understand more about concepts learnt by continuously asking questions for clarification.",
+        "values": "He is polite and respectful."
+      },
+      {
+        "name": "LIAM TYLER",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Liam is a focused and determined learner who consistently completes tasks independently and demonstrates strong commitment to his studies.  His academic performance is taking shape. He actively participates in both classroom and outdoor activities, showing good cooperation with peers. With constant support, he can do much better. Encouraged to continue challenging himself with more complex tasks to maximize his potential.",
+        "competencies": "He shows a deep desire to understand concepts through inquiry and active participation, reflecting strong learning-to-learn skills.",
+        "values": "He is kind and obedient."
+      },
+      {
+        "name": "MELVIN KARANI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Melvin is an exceptionally organized and assertive learner. He manages his tasks with remarkable efficiency and confidently expresses his ideas and opinions contributing to good performance. He collaboratively works together with peers and actively participates in soccer. Encouraged to focus and settle during learning process for further improvement.",
+        "competencies": "He actively engages in discussions, expressing ideas clearly.",
+        "values": "He is a responsible and respectful learner."
+      },
+      {
+        "name": "METOYA WARUIRU",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Metoya is a polite and cooperative learner. She completes tasks assigned to her regularly. She strives to reach her potential in all the learning areas. Her academic performance has slightly improved from the previous one. Encouraged to ask questions whenever she needs clarification.",
+        "competencies": "She has demonstrated the ability to express her opinions and concerns effectively and confidently while interacting with others.",
+        "values": "She is a responsible and loving learner."
+      },
+      {
+        "name": "OCHENGO OCHENGO",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Ochengo is a determined and committed learner. He works at an appropriate pace to achieve set goals. He is very outgoing and enjoys outdoor activities. His academic performance is average but with proper guidance and support, he will be outstanding. Encouraged to settle and pay keen attention during learning.",
+        "competencies": "He eagerly seeks to understand more about concepts learnt by continuously asking questions for clarification.",
+        "values": "He is honest and respectful."
+      },
+      {
+        "name": "PRINCE CHEGE",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Prince is an independent learner who manages his work effectively. His academic performance is good across all learning areas. He amicably relates with peers and actively participates in co-curricular activities especially football. Encouraged to check his work keenly and carefully before submission.",
+        "competencies": "He reasons rationally on the challenging tasks to provide viable solution when interacting with various learning areas.",
+        "values": "He is helpful and a team player."
+      },
+      {
+        "name": "ROSE ISIS",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Rose is a lively and energetic learner. She enjoys participating in hands on activities during learning process and collaborates amicably with peers. She enjoys outdoor activities especially dance club. She needs to work carefully and not in haste to check her work carefully for improvement especially during assessments.",
+        "competencies": "She seeks to deepen her understanding of new concepts by consistently asking questions.",
+        "values": "Encouraged to be kind and respectful to others."
+      },
+      {
+        "name": "SCOTT GATU",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Scott is a cheerful and cooperative learner who actively participates during group activities. There is slight improvement in his academic performance this term. He actively participates in soccer. With continued support, he is building the ability to manage his temper in a calmer way.",
+        "competencies": "He uses computers and other digital devices to get useful information as directed.",
+        "values": "He is obedient and cooperative."
+      },
+      {
+        "name": "SIMON KAMAU GICHANE",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Simon is an independent and reliable learner. He consistently demonstrates ability to manage his tasks effectively without reminders. He relates amicably with peers. He can perform much better if he counter-checks his work carefully during assessments.",
+        "competencies": "He seeks to deepen his understanding about concepts learnt by continuously asking questions for clarification.",
+        "values": "He is honest and respectful."
+      },
+      {
+        "name": "TACARI GENESIS",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Tacari is an eager and energetic learner. He has shown consistency in work completion habits. He actively participates in soccer which has led to good relationships with peers. An improvement has been noted in his change of behaviour and now takes instructions positively.  Encouraged to improve on his speed while performing class tasks.",
+        "competencies": "He seeks clarification on concepts learnt by asking questions, taking responsibility for his learning.",
+        "values": "He is helpful and a team player."
+      },
+      {
+        "name": "TALEK THINWA",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Talek is a respectful and considerate learner. This creates a harmonious, positive and supportive learning environment. He is very creative and enjoys doing creative arts activities. There is slight improvement noted in his academic performance and he actively participates in basketball. Encouraged to embrace Kiswahili as our national language in Kenya.",
+        "competencies": "He eagerly seeks to understand more about concepts learnt by continuously asking questions for clarification.",
+        "values": "He is Kind and respectful."
+      },
+      {
+        "name": "TANA KAGAI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Tana is a calm and hardworking learner. He approaches tasks with steady focus and consistently puts in effort that is needed to achieve set goals. His academic performance is average. He actively participates in tennis. Encouraged to socialize more with peers during outdoor activities",
+        "competencies": "He eagerly seeks to understand more about concepts learnt by continuously asking questions for clarification.",
+        "values": "He is kind and honest."
+      },
+      {
+        "name": "WALTER CHEGE",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Walter is a reliable learner who works independently and completes tasks efficiently. He is making good academic progress. He relates well with classmates and actively participates in sports activities especially soccer and swimming. Encouraged to settle and pay attention during learning sessions.",
+        "competencies": "He seeks to deepen understanding for new concepts by consistently asking questions.",
+        "values": "He is kind and respectful."
+      },
+      {
+        "name": "XARIA NJERI",
+        "stream": "",
+        "teacher": "TR. SNAIDAH",
+        "performance": "Xaria is a determined learner who completes her work at a steady pace and remains committed to achieving her academic goals. She is making good academic progress. She amicably collaborates with peers and actively participates in cocurricular activities especially dance club.",
+        "competencies": "She demonstrates a strong willingness to learn by asking questions for clarification.",
+        "values": "She is honest and respectful."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "ELSIE AGNES",
+        "stream": ""
+      },
+      {
+        "name": "SIMON KAMAU GICHANE",
+        "stream": ""
+      },
+      {
+        "name": "JEROME MWANGI",
+        "stream": ""
+      },
+      {
+        "name": "MELVIN KARANI",
+        "stream": ""
+      },
+      {
+        "name": "PRINCE CHEGE",
+        "stream": ""
+      },
+      {
+        "name": "ELAM CADE",
+        "stream": ""
+      },
+      {
+        "name": "ELLA IMANI",
+        "stream": ""
+      },
+      {
+        "name": "JASON THUO",
+        "stream": ""
+      },
+      {
+        "name": "XARIA NJERI",
+        "stream": ""
+      },
+      {
+        "name": "OCHENGO OCHENGO",
+        "stream": ""
+      },
+      {
+        "name": "COMARK ONANI",
+        "stream": ""
+      },
+      {
+        "name": "LIAM TYLER",
+        "stream": ""
+      },
+      {
+        "name": "TALEK THINWA",
+        "stream": ""
+      },
+      {
+        "name": "JANE WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "ALYSSA WANGU",
+        "stream": ""
+      },
+      {
+        "name": "DECLAN NGATIA",
+        "stream": ""
+      },
+      {
+        "name": "JOSEPH KARANJA",
+        "stream": ""
+      },
+      {
+        "name": "TACARI GENESIS",
+        "stream": ""
+      },
+      {
+        "name": "ETHAN MURUTHI",
+        "stream": ""
+      },
+      {
+        "name": "ROSE ISIS",
+        "stream": ""
+      },
+      {
+        "name": "TANA KAGAI",
+        "stream": ""
+      },
+      {
+        "name": "WALTER CHEGE",
+        "stream": ""
+      },
+      {
+        "name": "DELVIN DUNCAN",
+        "stream": ""
+      },
+      {
+        "name": "ETHAN SAITEMU",
+        "stream": ""
+      },
+      {
+        "name": "METOYA WARUIRU",
+        "stream": ""
+      },
+      {
+        "name": "SCOTT GATU",
+        "stream": ""
+      },
+      {
+        "name": "JEREMIAH KEITH",
+        "stream": ""
+      },
+      {
+        "name": "SUBJECT RANK",
+        "stream": ""
+      }
+    ]
+  },
+  "Grade 6": {
+    "comments": [
+      {
+        "name": "ABIGAIL WAITHIRA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Abigail is an enthusiastic and motivated learner  who approaches learning activities with enthusiasm and determination.  She continues to show steady academic progress. She is active in co-curricular activities.",
+        "competencies": "She shows interest in understanding concepts and participates well in discussions.",
+        "values": "She demonstrates honesty and responsibility."
+      },
+      {
+        "name": "AIDEN GITONGAH",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Aiden is a determined and diligent learner who approaches academic tasks with commitment and perseverence. He is currently working on strategies to complete classwork and homework within required timelines and is showing great signs of progress. He actively participates in co-curricular activities, especially soccer which he enjoys most.",
+        "competencies": "He demonstrates helpfulness and cooperation , willingly suuporting classmates and contributing to team success.",
+        "values": "He demonstrates responsibilty."
+      },
+      {
+        "name": "AITHAN NDARUA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Aithan Ndarua is a dedicated, positive, and committed learner who engages constructively with all learning activities. He completes his work with care and attention to detail, maintaining consistent academic standards. He frequently asks thoughtful questions to deepen his understanding and actively engages in classroom discussions.  He is encouraged to settle so he can complete his assingments. He is a dedicated athlete, focusing his energy on the competitive environment of s soccer.",
+        "competencies": "He expresses his ideas and concerns with confidence and clarity during interactions with others. He also engages constructively in group settings.",
+        "values": "He demonstrates respect for others and maintaintains positive relationships with peers and teachers."
+      },
+      {
+        "name": "AMANDA WAITHERA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Amanda is a reliable learner who completes most tasks within the given time. She seeks clarification to better understand concepts and works harmoniously with others. She participates in co-curricular activities.",
+        "competencies": "She exhibits critical thinking and problem solving skills, approaching challenges with analytical reasoning and creative solutions.",
+        "values": "She demmonstrates responsibility and discipline in her work, consistently meeting obligations and maintaining high standards of conduct."
+      },
+      {
+        "name": "ANAYA WANJIRU",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Anaya is a focused learner who approaches tasks with determination. She asks questions to better understand concepts taught in class and works well with others. She is very active in co-curricular activities.",
+        "competencies": "She is a strong collaborator who leads and engages in class discussions with great clarity.",
+        "values": "She demonstrates care and compassion towards her peers."
+      },
+      {
+        "name": "ARIANA BOSIBORI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Ariana is a determined learner who continues to work towards achieving learning goals. she is showing steady progress in her academics. She is currently working on strategies to complete her classwork and homework with the given time.",
+        "competencies": "She demonstrates strong learning to learn competency by asking for clarification in order to understand concepts.",
+        "values": "She is encouraged to embrace kindness and cooperate well with others."
+      },
+      {
+        "name": "AYANNAH WANJRU",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Ayanna is a focused candidate who completes her tasks with great care. Her creativity continues to be a highlight of her work. She continues to make steady progress in her academic journey.She is active in co-curricular activities.",
+        "competencies": "She expresses her ideas and concerns with confidence and clarity during interactions with others. She engages constructively in group settings.",
+        "values": "She demonstrates responsibilty and care towards others, creating a positive and nurturing environment."
+      },
+      {
+        "name": "BRANDON MWANIKI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Brandon is a dedicated learner who works consistently to complete assigned tasks. He collaborates well with others and shares ideas confidently. He is showing great improvent in his acdemic work and works well across all subjects. He actively participates in co-curricular activities.",
+        "competencies": "He is a thoughtful learner who asks deep questions to ensure full understanding of concepts.",
+        "values": "He demonstrates responsiblity and respect toward both teachers and peers."
+      },
+      {
+        "name": "CRISTIN KIAMA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Cristin is a cooperative and attentive learner who participates actively in class activities and demonstrates a willingness to learn. She works well with her classmates during group assignments and communicates her ideas clearly during discussions.",
+        "competencies": "She demonstrates strong learning-to-learn skills through active questioning and engagement.",
+        "values": "She is encouraged to consistently practice kindness and respect."
+      },
+      {
+        "name": "DENICE CRYSTAL",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Denice is an enthusiastic, confident, and inquisitive learner who participates actively in class activities and approaches learning with great curiosity. She completes her assignments diligently and continues to show steady academic progress. She is active in co-curricular activities.",
+        "competencies": "Denice often asks thoughtful questions to deepen her understanding and collaborates well with her peers during group tasks.",
+        "values": "She demonstrates responsibility and discipline in her work."
+      },
+      {
+        "name": "ELLA KARIMI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Ella Karimi is an enthusiastic, confident, and inquisitive learner who participates actively in class activities and approaches learning with great curiosity. She completes her assignments diligently and consistently meets deadlines, demonstrating strong academic discipline.",
+        "competencies": "She collaborates effectively with peers during group activities, contributing ideas and working cooperatively toward shared goals.",
+        "values": "She demonstrates responsibility and loving care toward others, creating a positive and nurturing environment."
+      },
+      {
+        "name": "ETHAN NJUGUNA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Ethan Njuguna is an ambitious and focused learner who sets high standards for his academic achievement. He completes his work with care and attention to detail, maintaining consistent academic standards. He collaborates effectively with peers during group activities, contributing ideas and working cooperatively toward shared goals.",
+        "competencies": "Ethan demonstrates excellent critical thinking and problem solving skills. He is also creative.",
+        "values": "He is encouraged to be kind and compassionate and obedient."
+      },
+      {
+        "name": "GLADWELL GAKII",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Gladwell Gakii is a focused, determined, and diligent learner who approaches academic tasks with commitment and perseverance. She is currently working on strategies to complete classwork within required timelines while maintaining quality standards.",
+        "competencies": "Gladwell Gakii demonstrates strong learning-to-learn competencies, showing great spirit in seeking knowledge both within and beyond the classroom. She displays genuine intellectual curiosity and dedication to academic growth.",
+        "values": "She demonstrates honesty and respect in all dealings, maintaining integrity and treating others with dignity."
+      },
+      {
+        "name": "IMANI MUNGUTI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Imani Munguti is a calm, methodical, and dedicated learner who approaches her studies with consistent focus and determination. She completes her work with care and attention to detail, maintaining consistent academic standards.",
+        "competencies": "Imani Munguti demonstrates excellent learning-to-learn skills, consistently seeking deeper understanding through thoughtful questioning and active engagement with new concepts. She is a proactive learner who takes initiative in mastering the curriculum.",
+        "values": "She demonstrates honesty and respect in all dealings, maintaining integrity and treating others with dignity."
+      },
+      {
+        "name": "JAMHURI KUDA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Jamhuri is an exceptionally organized, efficient, and goal-oriented learner who demonstrates remarkable self-management skills. He completes his work with care and attention to detail, maintaining consistent academic standards. He shows a strong preference for outdoor and practical activities, excelling in tennis, scouting, and young farmers.",
+        "competencies": "He demonstrates strong self-efficacy, confidently expressing his opinions and ideas during class interactions. He exhibits high self-esteem and articulates his concerns with clarity and conviction.",
+        "values": "demonstrates helpfulness and cooperation, willingly supporting classmates and contributing to team success."
+      },
+      {
+        "name": "JAYDEN MANINI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Jayden is a calm, methodical, and dedicated learner who approaches his studies with consistent focus and determination. He completes his work with care and attention to detail, maintaining consistent academic standards. His passion for soccer and outdoor activities brings great energy and vitality to the class. He participates actively in soccer, athletics, and outdoor activities.",
+        "competencies": "He demonstrates strong learning-to-learn competencies, showing great spirit in seeking knowledge both within and beyond the classroom. He displays genuine intellectual curiosity and dedication to academic growth.",
+        "values": "He demonstrates honesty and respect in all dealings, maintaining integrity and treating others with dignity."
+      },
+      {
+        "name": "JENELLE MUTHONI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Jenelle Muthoni is an enthusiastic, confident, and inquisitive learner who participates actively in class activities and approaches learning with great curiosity. She completes her work with care and attention to detail, maintaining consistent academic standards. She frequently asks thoughtful questions to deepen her understanding and actively engages in classroom discussions.  She is encouraged to her pay attention to her class work and homework",
+        "competencies": "Jenelle Muthoni demonstrates strong communication and collaboration skills, expressing her ideas and concerns with confidence and clarity during interactions with others. She is an effective communicator who engages constructively in group settings.",
+        "values": "She is a responsible, loving and reliable learner."
+      },
+      {
+        "name": "LEO BROWN",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Leo is a determined learner who shows interest in class activities and has shown steady progress in his academics this term. He completes work consistently. He is active in co-curricular activities.",
+        "competencies": "He asks questions to deepen his understanding of concepts and collaborates well with peers.",
+        "values": "He demonstrates respect and responsibility."
+      },
+      {
+        "name": "LULU WAMBUI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Lulu is a disciplined and self-motivated learner who approaches her academic tasks with responsibility and confidence. She completes her assignments on time and continues to demonstrate steady progress in her studies. Lulu participates well in class discussions and works effectively with her classmates during group activities.",
+        "competencies": "She demonstrates strong communication and collaboration skills when interacting with others.",
+        "values": "She is a reliable, responsible, and helpful learner."
+      },
+      {
+        "name": "MELISSA MUGURE",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Melissa is a creative, expressive and energetic learner who contributes positively to the classroom environment. She participates actively in class activities and demonstrates enthusiasm in her studies.",
+        "competencies": "She demonstrates strong learning-to-learn skills by asking relevant questions to deepen understanding.",
+        "values": "She consistently demonstrates integrity and respect."
+      },
+      {
+        "name": "MICHAEL MUKONO",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Michael is a cheerful and cooperative learner who contributes positively to the classroom atmosphere. He continues to make progress in completing assignments and participates willingly in learning activities.",
+        "competencies": "He demonstrates growing communication and collaboration skills.",
+        "values": "He is a caring and responsible learner."
+      },
+      {
+        "name": "MISHA SARAH",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Misha is a polite and determined learner who approaches her studies with a positive attitude. She participates in learning activities and demonstrates interest in understanding concepts taught in class. Despite occasional absences that affect continuity in learning, she continues to make gradual academic progress",
+        "competencies": "She demonstrates learning-to-learn skills by seeking guidance from teachers.",
+        "values": "She is a respectful and courteous learner."
+      },
+      {
+        "name": "SAMUEL KIGATHE",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Samuel Kigathe is an energetic, vibrant, and engaged learner who brings positive enthusiasm to all class activities. He completes his work with care and attention to detail, maintaining consistent academic standards.",
+        "competencies": "Samuel Kigathe demonstrates excellent learning-to-learn skills, consistently seeking deeper understanding through thoughtful questioning and active engagement with new concepts. He is a proactive learner who takes initiative in mastering the curriculum.",
+        "values": "He demonstrates helpfulness and cooperation, willingly supporting classmates and contributing to team success."
+      },
+      {
+        "name": "SHANICE MURUGI",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Shanice is a lively and enthusiastic learner who brings positive energy to the classroom. She participates actively in learning activities and continues to make gradual academic progress. She is active in co-curricular activities.",
+        "competencies": "She continues to seek a deeper understanding of concepts by asking insightful questions.",
+        "values": "She demonstrates respect and care towards her peers."
+      },
+      {
+        "name": "TIMOTHY MBUGUA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Timothy is a thoughtful, creative, and diligent learner who contributes positively to the classroom atmosphere. He shows steady academic progress and expresses himself particularly well through creative arts, drama, and music activities, where he demonstrates teamwork and leadership. He actively seeks thorough explanations to enhance understanding",
+        "competencies": "Timothy Mbugua demonstrates excellent learning-to-learn skills, consistently seeking deeper understanding through thoughtful questioning and active engagement with new concepts. He is a proactive learner who takes initiative in mastering the curriculum.",
+        "values": "He demonstrates kindness and respect toward everyone, contributing to a harmonious and supportive classroom environment"
+      },
+      {
+        "name": "ZAWADI MAINA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Zawadi is a capable and independent learner who approaches his tasks confidently. He continues to show steady progress in class activities and is encouraged to remain calm during assessments so as to avoid overlooking important details. Zawadi participates in soccer, where he demonstrates strong teamwork, discipline, and enthusiasm.",
+        "competencies": "Zawadi Maina demonstrates strong digital literacy skills, proficiently using digital tools and technology to enhance his learning process. He effectively integrates technology into his academic work.",
+        "values": "He demonstrates helpfulness and cooperation, willingly supporting classmates and contributing to team success."
+      },
+      {
+        "name": "ZURI MUDAIDA",
+        "stream": "",
+        "teacher": "TR.RAEL",
+        "performance": "Zuri is a hardworking learner who shows commitment to classwork. She contributes well during discussions and works cooperatively with classmates. She is active in co-curricular activities.",
+        "competencies": "She exhibits high self-esteem and expresses her concerns and opinions very effectively.",
+        "values": "She demonstrates honesty and responsibility."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "ANAYA WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "DENICE CRYSTAL",
+        "stream": ""
+      },
+      {
+        "name": "ETHAN NJUGUNA",
+        "stream": ""
+      },
+      {
+        "name": "LULU WAMBUI",
+        "stream": ""
+      },
+      {
+        "name": "ZURI MUDAIDA",
+        "stream": ""
+      },
+      {
+        "name": "TIMOTHY MBUGUA",
+        "stream": ""
+      },
+      {
+        "name": "JAYDEN MANINI",
+        "stream": ""
+      },
+      {
+        "name": "AIDEN GITONGAH",
+        "stream": ""
+      },
+      {
+        "name": "JAMHURI KUDA",
+        "stream": ""
+      },
+      {
+        "name": "AMANDA WAITHERA",
+        "stream": ""
+      },
+      {
+        "name": "BRANDON MWANIKI",
+        "stream": ""
+      },
+      {
+        "name": "CRISTIN KIAMA",
+        "stream": ""
+      },
+      {
+        "name": "ABIGAIL WAITHIRA",
+        "stream": ""
+      },
+      {
+        "name": "IMANI MUNGUTI",
+        "stream": ""
+      },
+      {
+        "name": "MELISSA MUGURE",
+        "stream": ""
+      },
+      {
+        "name": "GLADWELL GAKII",
+        "stream": ""
+      },
+      {
+        "name": "ZAWADI MAINA",
+        "stream": ""
+      },
+      {
+        "name": "ARIANA BOSIBORI",
+        "stream": ""
+      },
+      {
+        "name": "AYANNAH WANJRU",
+        "stream": ""
+      },
+      {
+        "name": "ELLA KARIMI",
+        "stream": ""
+      },
+      {
+        "name": "LEO BROWN",
+        "stream": ""
+      },
+      {
+        "name": "AITHAN NDARUA",
+        "stream": ""
+      },
+      {
+        "name": "JENELLE MUTHONI",
+        "stream": ""
+      },
+      {
+        "name": "MISHA SARAH",
+        "stream": ""
+      },
+      {
+        "name": "SAMUEL KIGATHE",
+        "stream": ""
+      },
+      {
+        "name": "MICHAEL MUKONO",
+        "stream": ""
+      },
+      {
+        "name": "SHANICE MURUGI",
+        "stream": ""
+      },
+      {
+        "name": "SUBJECT RANK",
+        "stream": ""
+      }
+    ]
+  },
+  "Grade 7": {
+    "comments": [
+      {
+        "name": "ABI SIFA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Abi is a confident, friendly and inquisitive learner who doesn’t rest until she gets the right answers. Shas demonstrated average academic ability this term. She understands concepts and completes assignments accurately and consistently. She is however encouraged to put in more effort on Mathematics. She is actively participating in Swimming.",
+        "competencies": "Abi shows strong communication and collaboration skills and contributes meaningful ideas during group discussions . She also demonstrates critical thinking and problem solving when handling tasks.",
+        "values": "She is honest and loving."
+      },
+      {
+        "name": "ABIGAEL BLESSING",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Abigail is a calm and compassionate student. She completes tasks at a relatively good speed. She has shown steady progress in performance. She is however encouraged to fully exploit her potential in order to realize great performance. Abigail actively participates in Tennis.",
+        "competencies": "She demonstrates good progress in acquisition of core competencies. Abigail communicates effectively and collaborates well in group tasks. She is also showing attempts of self- efficacy and critical thinking and problem solving skills.",
+        "values": "Abigail is obedient, kind and loving"
+      },
+      {
+        "name": "ABIGAIL WACUKA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Abigail is a jovial, enthusiastic and smart learner. She has demonstrated outstanding academic ability this term. She understands concepts quickly, completes assignments accurately and consistently performs above expectations. Abigail took part in Kenya Science and Engineering Fair 2026. Abigail actively participates in Tennis and Swimming",
+        "competencies": "Abigail exhibits strong analytical and problem- solving skills. She shows strong communication and collaboration skills. She contributes meaningful ideas during discussions. She is highly independently thus showing self- efficacy",
+        "values": "She consistently demonstrates positive values such as respect, responsibility, integrity and cooperation."
+      },
+      {
+        "name": "ADRIAN MACHARIA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Adrian is an energetic and inquisitive learner. He has shown great improvement in-terms of completion of tasks and character. He completes his work well within the period given.He has shown consistency in his performance in most learning areas. Adrian participates actively in Football.",
+        "competencies": "Adrian is an energetic and inquisitive learner. He has shown great improvement in-terms of completion of tasks and character. He completes his work well within the period given.He has shown consistency in his performance in most learning areas. Adrian participates actively in Football.",
+        "values": "He is kind and loving."
+      },
+      {
+        "name": "BECKY ACHANDO",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Becky is a caring and well composed learner. She performs well in most learning areas. She completes tasks within the stipulated time. Becky has shown steady progress in her performance. She actively participates in Basketball.",
+        "competencies": "Becky shows strong communication and collaboration skills and contributes meaningful ideas during group activities. Becky thinks critically and provides viable answers.",
+        "values": "Becky is kind, caring and honest."
+      },
+      {
+        "name": "BRYAN NG'ANG'A",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Bryan is enthusiastic and actively participates in some learning areas showing good potential. He demonstrates average understanding of concepts. He is showing steady progress in completion of tasks. He is however encouraged to give the right attitude to Mathematics, Kiswahili and Social Studies. Brian actively participates in Football.",
+        "competencies": "Bryan has acquired core competencies at an average level. He communicates precisely with peers and also shows progress in self- efficacy and critical thinking.",
+        "values": "He is kind and loving"
+      },
+      {
+        "name": "ELI KARANJA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Eli is a jovial ,enthusiastic and outgoing student. He demonstrates good performance in most learning areas. He completes tasks given within the stipulated timeHe is however encouraged to put in more effort in Mathematics and Kiswahili. Eli actively participates in football.",
+        "competencies": "Communicates clearly and works well with others. He shows creativity and imagination in tasks provided.",
+        "values": "He maintains a good discipline and positive attitude. He is also kind and responsible."
+      },
+      {
+        "name": "ELISHA BARAKA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Elisha is friendly and compassionate. He shows average performance across most learning areas. He is however encouraged to complete tasks given and focus more on Kiswahili and Mathematics. He should also stay more focused and avoid being too playful. His performance this term is gradually improving. Elisha actively participates in football.",
+        "competencies": "He communicates ideas adequately and cooperates with peers. He shows some problem-solving and critical thinking skills, though further practice is needed",
+        "values": "Elisha demonstrates acceptable values like kindness and respect."
+      },
+      {
+        "name": "EPHRAIM GITHINJI",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Ephraim is quite quiet and calm learner. He demonstrates average understanding of concepts. He completes most tasks with some guidance and shows progress in his studies. He is however encouraged to put in more effort in Mathematics, Kiswahili and Creative Arts. Ephraim actively participates in football.",
+        "competencies": "He has acquired core competencies at an average level. He communicates clearly. He shows critical thinking and problem solving although sometimes require support to fully analyze tasks.",
+        "values": "Ephraim is peaceful, calm and polite."
+      },
+      {
+        "name": "ETHAN OTUNGA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Ethan is a jovial, honest and self-controlled learner. He has developed strong leadership skills and is able to offer servant leadership to peers. Ethan has shown good and progressive performance this term. He consistently and accurately completes his tasks on time. He actively participates in Football.",
+        "competencies": "Ethan shows strong analytic and problem-solving skills. He communicates effectively and contributes meaningful ideas in group activities.",
+        "values": "Ethan is honest and has great integrity. He advocates for equity too."
+      },
+      {
+        "name": "JABARR MURIITHI",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Peter is a compassionate and friendly student. He performs well in most learning areas. He completes tasks at the right time and actively participates in class activities. He is however encouraged to put in more effort in Kiswahili and Mathematics.  He participates in football.",
+        "competencies": "Peter demonstrates creativity and imagination in his activities. He has shown critical thinking and problem -solving during class activities.",
+        "values": "He exhibits positive values such as respect, responsibility and cooperation."
+      },
+      {
+        "name": "JAEL NG'ENDO",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Jael is a jovial ,composed and loving learner . She completes most tasks within the stipulated time. She is making good progress and shows understanding of concepts with guidance. She is however advised to put more effort in Mathematics and Kiswahili. Jael actively participates in Basketball.",
+        "competencies": "Jael communicates effectively and collaborates well in group tasks. She is also showing independence in some individual tasks.",
+        "values": "She is respectful, kind and honest."
+      },
+      {
+        "name": "JOEL MUTUA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Joel is an enthusiastic and highly motivated learner. He shows strong understanding of concepts and applies knowledge effectively in different contexts. He completes tasks given within the stipulated time. His performance this term was above average. Joel participated in Kenya Science and Engineering Fair 2026. He actively participates in Coding and Robotics.",
+        "competencies": "Joel exhibits critical thinking, creativity and problem -solving skills. He also shows independence and initiative in learning activities.",
+        "values": "He consistently demonstrates exemplary values such as responsibility, respect and kindness."
+      },
+      {
+        "name": "JONATHAN MBURU",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Jonathan is a friendly and well composed boy student. He works at a relatively good speed completing his tasks on time. He has demonstrated progress in his performance this term. He is however encouraged to give the right attitude to some learning areas like Mathematics, Kiswahili and Creative Arts. Jonathan actively participates in Football",
+        "competencies": "He is showing strong communication and collaboration skills. He also actively participates in outdoor tasks and projects.",
+        "values": "Jonathan exhibits positive values such as responsibility, cooperation and kindness."
+      },
+      {
+        "name": "MERCY WANJIRU",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Mercy is calm, loving and eager to learn. She demonstrates average understanding of concepts in class. She completes most tasks on time and has shown steady progress in her studies. With continued encouragement and focus, she has the potential to achieve higher academic outcomes. She actively participates in Basketball",
+        "competencies": "She communicates clearly in group activities. Mercy shows basic skills in critical thinking and problem solving.",
+        "values": "Mercy is respectful, kind and loving."
+      },
+      {
+        "name": "NATASHA NJERI",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Natasha is a jovial and energetic girl. She completes most tasks with guidance. She is making progress and requires close support to understand some concepts. She is encouraged to complete tasks on time and submit for marking. Natasha participated in Kenya Science and Engineering Fair 2026.She also an active participant in football.",
+        "competencies": "Natasha demonstrates good progress in acquiring core competencies. She is confident in communication and actively participates in discussions. She is developing independence in learning and takes initiative in tasks.",
+        "values": "Natasha is kind, emphathetic and loving."
+      },
+      {
+        "name": "NELSON KAMAU",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Nelson is jovial, enthusiastic and a kind learner. He shows average understanding of concepts taught in class. He is able to complete most tasks with some guidance and shows steady progress in his studies. With continued encouragement and focus, he has potential to achieve higher academic outcomes. Nelson participates in football.",
+        "competencies": "He communicates ideas logically in group activities. He shows critical thinking and problem solving although sometimes requires support to fully analyze tasks.",
+        "values": "Nelson demonstrates acceptable values such as respect to teachers and peers, love and kindness."
+      },
+      {
+        "name": "NICHOLE NYOKABI",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Nichole is a quiet and calm learner. She demonstrates understanding of some concepts. She completes most tasks with some guidance and shows steady progress in her studies. She is however encouraged to put in more effort in learning areas like Mathematics ,Kiswahili and Creative Arts. Nichole actively participates in Basketball and swimming",
+        "competencies": "She shows strong communication and collaboration skills and contributes meaningful ideas when with peers.",
+        "values": "Nichole is kind, respectful and caring."
+      },
+      {
+        "name": "PETER NDUNG’U",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Peter is calm, enthusiastic and a loving learner. He demonstrates excellent mastery of the concepts taught and consistently performs well in many learning areas. He completes tasks independently and accurately. Peter actively participates in football.",
+        "competencies": "He has successfully acquired most competencies. He communicates ideas clearly, and collaborates effectively with others. Peter shows creativity and imagination as well as solving tasks independently.",
+        "values": "Peter is loving, respectful and honest."
+      },
+      {
+        "name": "PURITY WANJIRU",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Purity is a calm and compassionate student. She demonstrates understanding of some concepts and completes most tasks with guidance. She is however encouraged to put in more effort in Creative Arts, Mathematics and Kiswahili. Purity actively participates in Basketball.",
+        "competencies": "She communicates effectively with peers and demonstrates collaboration in group tasks. She also shows creativity in solving problems in some learning areas.",
+        "values": "Purity is kind and respectful."
+      },
+      {
+        "name": "RYAN GITAU",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Gitau is a smart and self- driven learner. He is always ready and eager to learn. Gitau works at a very good speed completing tasks given within the stipulated time. He demonstrates excellent understanding of concepts and performs very well in most learning areas. Gitau has shown great performance this term. He is however encouraged to put in more effort in Kiswahili. He actively participates in football.",
+        "competencies": "Gitau demonstrates high self- reliance. He communicates and collaborates very well during the lessons. He applies critical thinking and problem- solving skills in most areas.",
+        "values": "He demonstrates admirable values such as responsibility, respect and integrity"
+      },
+      {
+        "name": "RYAN MUGAMBI",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Mugambi is a confident and outgoing student. He shows a strong understanding of most concepts taught in class. He completes tasks with accuracy and participates actively in lessons and produces quality work. His performance this term has been great. Mugambi participated in Kenya Science and Engineering Fair 2026.",
+        "competencies": "He demonstrates great communication and collaboration skills during class activities. He exhibits strong critical thinking and problem -solving skills. Mugambi is highly independent demonstrating self -efficacy",
+        "values": "Mugambi displays great leadership skills. He shows respect, responsibility and cooperation."
+      },
+      {
+        "name": "RYAN MUNYAO",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Ryan is a confident, friendly and enthusiastic student. He works at a relatively good speed completing his tasks on time. Ryan demonstrates satisfactory academic progress and in this term his performance was above average this term. He participated in Kenya Science and Engineering Fair 2026.He also actively plays football.",
+        "competencies": "He actively participates in learning activities showing strong communication, collaboration and creativity skills. He confidently shares ideas and works well with others in group tasks.",
+        "values": "Ryan demonstrates admirable values such as respect, kindness and supportiveness."
+      },
+      {
+        "name": "SHIREEN WANJIRU",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Shireen is an obedient and enthusiastic learner. She completes her tasks at a good speed and has shown steady progress in her studies. Shireen participates actively during lessons. With continued encouragement and focus, she has the ability to achieve higher. She actively participates in swimming.",
+        "competencies": "Shireen communicates effectively during group tasks and collaborates with others contributing meaningful ideas in group activities. She is also able to do work individually.",
+        "values": "Shireen is jovial, respectful and honest."
+      },
+      {
+        "name": "TIFANNY NKATHA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Tiffany is a jovial and enthusiastic  learner. She demonstrates excellent understanding of concepts and performs very well in most learning areas. Tiffany has bonded with other learners and fitted in so well in class. She is however encouraged to participate in extra-curricular activities as it is part and parcel of learning.",
+        "competencies": "Tiffany communicates ideas well, collaborate effectively with peers and demonstrate creativity and critical thinking during learning activities.",
+        "values": "Tiffany is a well-behaved student demonstrating respect, responsibility and honesty."
+      },
+      {
+        "name": "TITO MOSES",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Tito is jovial ,honest and energetic learner. He is always enthusiastic to learn. He completes most tasks with the stipulated time and submits his work for marking. Tito has fitted in so well in class and does his work as per the standards set. Tito has shown steady progress in his performance. He is however encouraged to put in more effort in Mathematics, Kiswahili especially insha and Integrated Science .Tito participated in Kenya Science and Engineering Fair 2026.He actively participates in Footbal",
+        "competencies": "Tito communicates effectively with peers. He also shows critical thinking and problem solving skills.",
+        "values": "Tito is obedient and Honest"
+      },
+      {
+        "name": "VELLA AKALA",
+        "stream": "",
+        "teacher": "TR.LUCY O",
+        "performance": "Vella is a confident and compost student. She is a consistent learner who completes her tasks with the time required. She has fitted so well in her class and she is doing a great job across most learning areas. Her performance was above average this term. She also actively participates in core-curricular activities like Tenis and Swimming.",
+        "competencies": "Vella demonstrates acquisition of core competencies particularly in communication and collaboration where she works with others effectively in groups. Critical thinking by tackling more complex and independent problems.",
+        "values": "She is honest and loving"
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "RYAN MUGAMBI",
+        "stream": ""
+      },
+      {
+        "name": "RYAN GITAU",
+        "stream": ""
+      },
+      {
+        "name": "ABIGAIL WACUKA",
+        "stream": ""
+      },
+      {
+        "name": "ABI SIFA",
+        "stream": ""
+      },
+      {
+        "name": "JOEL MUTUA",
+        "stream": ""
+      },
+      {
+        "name": "VELLA AKALA",
+        "stream": ""
+      },
+      {
+        "name": "PETER NDUNG’U",
+        "stream": ""
+      },
+      {
+        "name": "ELI KARANJA",
+        "stream": ""
+      },
+      {
+        "name": "RYAN MUNYAO",
+        "stream": ""
+      },
+      {
+        "name": "TIFANNY NKATHA",
+        "stream": ""
+      },
+      {
+        "name": "JABARR MURIITHI",
+        "stream": ""
+      },
+      {
+        "name": "MERCY WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "ETHAN OTUNGA",
+        "stream": ""
+      },
+      {
+        "name": "ABIGAEL BLESSING",
+        "stream": ""
+      },
+      {
+        "name": "ADRIAN MACHARIA",
+        "stream": ""
+      },
+      {
+        "name": "BECKY ACHANDO",
+        "stream": ""
+      },
+      {
+        "name": "SHIREEN WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "JONATHAN MBURU",
+        "stream": ""
+      },
+      {
+        "name": "EPHRAIM GITHINJI",
+        "stream": ""
+      },
+      {
+        "name": "ELISHA BARAKA",
+        "stream": ""
+      },
+      {
+        "name": "NELSON KAMAU",
+        "stream": ""
+      },
+      {
+        "name": "TITO MOSES",
+        "stream": ""
+      },
+      {
+        "name": "NICHOLE NYOKABI",
+        "stream": ""
+      },
+      {
+        "name": "JAEL NG'ENDO",
+        "stream": ""
+      },
+      {
+        "name": "BRYAN NG'ANG'A",
+        "stream": ""
+      },
+      {
+        "name": "PURITY WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "NATASHA NJERI",
+        "stream": ""
+      },
+      {
+        "name": "SUBJECT RANK",
+        "stream": ""
+      }
+    ]
+  },
+  "Grade 8": {
+    "comments": [
+      {
+        "name": "ADDIE CYANN WANGUI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Addie is a diligent and focused learner who approaches every lesson with a desire to excel. Her academic progress this term has been steady. However, she is encouraged to do more Kiswahili activities to better her grades. She has actively participated in the Kenya Science and Engineering Fair this term. Addie actively takes part in basketball activities.",
+        "competencies": "Ann works harmoniously with her peers during group tasks and expresses her ideas with clarity and confidence.",
+        "values": "She is a polite and well organised learner."
+      },
+      {
+        "name": "AGLA KAHOSI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Agla is a very polite and well behaved learner. While she needs extra support to grasp new concepts, her positive attitude towards school makes her a pleasure to have in class. She is encouraged to do more mathematical activities and complete tasks given on time for better grades. Agla actively participates in tennis activities.",
+        "competencies": "She is learning to believe in her abilities to tackle new challenges one step at a time.",
+        "values": "She is humble and kind."
+      },
+      {
+        "name": "ANDREW JAYDEN MAINA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Andrew is an energetic and enthusiastic learner who brings positivity to the learning environment. He has shown remarkable progress in all learning areas through dedication and focus. He has developed a strong ability to work independently and is becoming increasingly confident in his ability. He is encouraged to do more Kiswahili and mathematical activities. Andrew actively participates in football and swimming activities.",
+        "competencies": "Andrew is very confident in using digital tools to create and edit documents.",
+        "values": "He is very empathetic and a caring friend to his classmates."
+      },
+      {
+        "name": "ANN NYAMBURA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Ann is an enthusiastic learner who brings great energy to the classroom. She is quick to embrace new challenges and shows a wonderful ability to link classroom topics to real world situations. She has demonstrated exceptional academic achievement this term. However, she is encouraged to do more mathematical activities. She took part in the Kenya Science and Engineering Fair this term. Ann actively participates in basketball activities.",
+        "competencies": "Ann shows verbal fluency, being able to translate her thoughts into spoken words with ease and confidence.",
+        "values": "She is a courageous and bold learner."
+      },
+      {
+        "name": "ANTHONY RAPHA MUITO",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Anthony is a resilient and tenacious learner who does not shy away from difficult tasks. His persistence is one of his greatest strengths, and it has led to measurable improvement in his academic output. He is encouraged to do more mathematical activities. Anthony actively participates in football, roboticsandcodingactivities.",
+        "competencies": "Anthony maintains high standards of digital ethics,ensuring his research is both accurate and appropriately sourced.",
+        "values": "He is patient and honest"
+      },
+      {
+        "name": "BRIAN MACHARIA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Brian is a passionate learner who is always eager to explore new topics beyond the standard curriculum. His enthusiasm is contagious, and he often inspires his classmates to participate more actively in class. He is encouraged to do more Kiswahili activities. This term, he took part in social studies cluster competition and the Kenya Science and Engineering Fair. Brian is an active participant in basketball activities.",
+        "competencies": "Brian excels in collaboration, working effectively with his peers to achieve shared goals during group projects.",
+        "values": "He is an honest and respectful learner."
+      },
+      {
+        "name": "CINDY NJURA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Cindy is an active participant in class who grasps new ideas with impressive speed. She shows great enthusiasm during hands-on activities. Her academic performance this term has been impressive. She is encouraged to do more Kiswahili activities to better her grades. She has taken part in social studies cluster competition and the Kenya Science and Engineering Fair this term. Cindy actively participates in Basketball activities.",
+        "competencies": "Cindy has mastered digital literacy, she easily manipulates a computer to create,save and retrieve word documents.",
+        "values": "She is respectful and maintains a positive attitude towards peers."
+      },
+      {
+        "name": "ELYANA NJERI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Elyana is a determined learner who strives for excellence in every task. She is highly organised and consistently produces work that is neat,well thought out, and accurate. Her academic performance this term has been exceptional. She is encouraged to maintain a positive attitude towards Kiswahili for better overall grades. This term, she took part in social studies cluster competition and the Kenya Science and Engineering Fair. She actively takes part in basketball activities.",
+        "competencies": "Elyana shows a high aptitude for problem solving, approaching difficult tasks with a calm and methodical mindset.",
+        "values": "She is a courageous and confident learner."
+      },
+      {
+        "name": "EMMANUEL LUKUYU",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Emmanuel is calm,composed and approaches tasks with a steady and focused mindset. He has displayed a wonderful sense of responsibility towards his academic work this term. The ability to stay on task has resulted in much better grades. He is encouraged to do more mathematical activities. Emmanuel actively participates in football activities.",
+        "competencies": "Emmanuel respects the diversity of his classmates and promotes an inclusive environment during all school activities",
+        "values": "He is honest and kind."
+      },
+      {
+        "name": "ESTHER OCHIENG’",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Esther is a resilient,persistent and determined learner who strives for excellence in every task. She displays a high level of curiosity and genuine love for learning. Esther's performance is fair,though greater commitment to assignments would lead to improvement. She is encouraged to do more activities in social studies and mathematics. This term,she actively took part in the Kenya Science and Engineering Fair. Esther actively participates in basketball and swimming activities",
+        "competencies": "Esther shows a high aptitude for problem-solving, approaching difficult tasks with a calm mindset..",
+        "values": "She is empathetic and a caring friend to her classmates"
+      },
+      {
+        "name": "ETHAN JOEL KAMAU",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Ethan is an enthusiastic learner who brings great energy to the classroom. He is quick to embrace new concepts and shows a wonderful ability to link classroom topics to real world situations. Ethan demonstrates satisfactory understanding of most concepts but can improve with more consistent effort. He is encouraged to do more mathematical activities. Ethan actively participates in football, robotics and coding activities.",
+        "competencies": "He is very adept at using a computer to enhance his learning.",
+        "values": "He is loving and a true champion of unity in class."
+      },
+      {
+        "name": "GABRIELLA MUMBI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Gabriella is a steady learner who has made great strides in her academic performance this term. Her participation in class has increased significantly, and her work shows a growing depth of thought. She is,however, encouraged to do more Kiswahili activities. She actively took part in the Kenya Science and Engineering Fair up to the county level. Gabriella takes part in basketball activities.",
+        "competencies": "Gabriella takes pride in her progress and remains motivated to achieve her long-term academic aspirations.",
+        "values": "She is a courageous and brave learner."
+      },
+      {
+        "name": "JARED NJENGA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Jared is a brilliant learner who maintains a high level of excellence across all learning areas. He has a sharp analytical mind and is able to process and apply new information with remarkable efficiency. He has shown excellent academic performance this term. He is encouraged to do more Kiswahili activities for better grades. He has actively participated in social studies cluster competition and the Kenya Science and Engineering Fair. Jared is an active participant in basketball activities.",
+        "competencies": "Jared uses his communication skills to lead his peers effectively during group discussions.",
+        "values": "He is a humble and dedicated learner."
+      },
+      {
+        "name": "JAY NGUGI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Jay is an industrious learner who manages his time and resources with great efficiency. He has shown significant improvement on his academic performance this term. He is encouraged to do more Kiswahili and mathematical activities for better grades. Jay actively participates in Tennis activities.",
+        "competencies": "Jay is constantly seeking new ways to expand his knowledge base and improve his study habits.",
+        "values": "Jay is loving and kind."
+      },
+      {
+        "name": "JOY PRECIOUS WANJIRU",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Joyprecious is a dedicated,kindhearted and polite learner. She has shown remarkable progress in all learning areas through dedication and focus. She has developed a strong ability to work independently and is becoming increasingly confident in her abilities . She actively participated in social studies cluster competition and the Kenya Science and Engineering Fair this term. She actively takes part in Tennis activities.",
+        "competencies": "JoyPrecious displays great creativity and imagination, especially when designing illustrations for her class assignments. .",
+        "values": "She is kindhearted and always willing to share with others."
+      },
+      {
+        "name": "JOY SHARLEEN WAMBUI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Joysharleen is a hardworking and consistent learner who always puts in her best effort. She is meticulous in her assignments and has shown significant improvement in her problem solving speed this term. She actively participated in the Kenya Science and Engineering Fair up to the county level. JoySharleen actively takes part in violin and tennis activities",
+        "competencies": "JoySharleen displays strong communication skills, expressing her ideas clearly and articulately during class presentations.",
+        "values": "She is honest and a reliable member of the class."
+      },
+      {
+        "name": "LEON DAMIAN",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Leon is a highly motivated learner who consistently seeks to deepen his understanding of the topics covered in class. His academic performance has remained excellent, reflecting his disciplined study habits and commitment to excellence. He is encouraged to do more Kiswahili activities for better grades. Leon actively participates in football activities.",
+        "competencies": "Leon manages his time with maturity, balancing academic requirements with his personal goals effectively.",
+        "values": "He is a principled and respectful learner."
+      },
+      {
+        "name": "LOVELINE ANUPI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Loveline is a calm and patient learner. She has shown great progress in her academic performance this term. She has developed a strong ability to work independently and is becoming increasingly confident when tackling complex tasks. She is encouraged to do more mathematical activities. Loveline actively participates in tennis activities.",
+        "competencies": "She excels in collaboration, working effectively with her peers to achieve shared goals during group projects.",
+        "values": "She embodies the value of love, showing genuine care for her environment and peers."
+      },
+      {
+        "name": "MEGAN NJERI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Megan is an inquisitive and bright learner who shows a remarkable interest in new concepts. She actively participates in class discussions and demonstrates a deep understanding of the core subjects. She actively participated in the Kenya Science and Engineering fair this term and social studies cluster competitions. She actively participates in tennis and swimming activities.",
+        "competencies": "Megan excels in collaboration, working effectively with her peers to achieve shared goals during group projects.",
+        "values": "She is polite and kind. ."
+      },
+      {
+        "name": "PATRIC MUKISA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Patrick is a focused learner who pays great attention to details in his work. He is a careful listener who ensures he understands every requirement before beginning a task. His performance has been remarkable this term. However, he is encouraged to do more Kiswahili and English activities. He has participated in the social studies cluster competition this term. He actively participates in football activities",
+        "competencies": "Patrick is gaining proficiency in learning to learn, showing a willingness to reflect on his mistakes and improve his work.",
+        "values": "He is a disciplined and orderly learner."
+      },
+      {
+        "name": "REUBEN CHEGE",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Reuben is an astute learner with a natural ability to analyze and criticize information. He remains engaged during demanding lessons and produces work that is consistently high quality. He is however encouraged to do more Kiswahili and English activities. Reuben actively participates in football activities.",
+        "competencies": "Reuben shows a deep commitment to the values of the school, often volunteering to help others.",
+        "values": "He is an honest and straightforward learner."
+      },
+      {
+        "name": "RIC BRIAN IRUNGU",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Ric-Brian is a kind and generous learner. He willingly shares ideas,resources and supports others. He is making steady progress in his academic performance. He is very attentive during lessons and shows a great desire to keep up with his peers. He is encouraged to do more Kiswahili and mathematical activities, and strive to complete assignments given on time. He is an active participant in football activities.",
+        "competencies": "He is becoming more comfortable sharing his ideas in small,supportive group settings.",
+        "values": "Ric-Brian is honest and kind hearted."
+      },
+      {
+        "name": "RYLAN GITHINJI",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Rylan is charismatic and engaging. He has shown steady improvement and a strong desire to succeed in all learning areas. His ability to concentrate has improved significantly, leading to much better results. However,he is encouraged to maintain a high level of discipline, integrity and strive to complete tasks on time. Rylan actively takes part in football activities.",
+        "competencies": "He demonstrates a great ability to identify challenges during practical activities and suggests viable solutions",
+        "values": "Rylan is honest and kind."
+      },
+      {
+        "name": "SHANTEL KURIA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Shantel is a steady and reliable learner whose academic growth has been remarkable this term. She is becoming a more vocal and confident participant in class. However, she is encouraged to do more Kiswahili activities and submit tasks given on time to improve her grades. Shantel actively takes part in tennis activities.",
+        "competencies": "She is a collaborative learner who enjoys sharing her findings and learning from her peers.",
+        "values": "She is a loving and kind learner."
+      },
+      {
+        "name": "TREVOR AMBUKA",
+        "stream": "",
+        "teacher": "TR. SHARON",
+        "performance": "Trevor displays a wonderful sense of responsibility towards his studies. His growth this term is a testament to his perseverance and his commitment to achieving his full potential. He is encouraged to do more Kiswahili activities to better his grades. He actively participates in football activities.",
+        "competencies": "Trevor expresses himself clearly and listens attentively to the ideas of others during group work.",
+        "values": "He is a kind and generous learner."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "JOY SHARLEEN WAMBUI",
+        "stream": ""
+      },
+      {
+        "name": "MEGAN NJERI",
+        "stream": ""
+      },
+      {
+        "name": "JOY PRECIOUS WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "CINDY NJURA",
+        "stream": ""
+      },
+      {
+        "name": "ELYANA NJERI",
+        "stream": ""
+      },
+      {
+        "name": "PATRIC MUKISA",
+        "stream": ""
+      },
+      {
+        "name": "ANN NYAMBURA",
+        "stream": ""
+      },
+      {
+        "name": "ADDIE CYANN WANGUI",
+        "stream": ""
+      },
+      {
+        "name": "TREVOR AMBUKA",
+        "stream": ""
+      },
+      {
+        "name": "LEON DAMIAN",
+        "stream": ""
+      },
+      {
+        "name": "JARED NJENGA",
+        "stream": ""
+      },
+      {
+        "name": "GABRIELLA MUMBI",
+        "stream": ""
+      },
+      {
+        "name": "REUBEN CHEGE",
+        "stream": ""
+      },
+      {
+        "name": "SHANTEL KURIA",
+        "stream": ""
+      },
+      {
+        "name": "ANDREW JAYDEN MAINA",
+        "stream": ""
+      },
+      {
+        "name": "BRIAN MACHARIA",
+        "stream": ""
+      },
+      {
+        "name": "ETHAN JOEL KAMAU",
+        "stream": ""
+      },
+      {
+        "name": "ANTHONY RAPHA MUITO",
+        "stream": ""
+      },
+      {
+        "name": "LOVELINE ANUPI",
+        "stream": ""
+      },
+      {
+        "name": "ESTHER OCHIENG’",
+        "stream": ""
+      },
+      {
+        "name": "RYLAN GITHINJI",
+        "stream": ""
+      },
+      {
+        "name": "EMMANUEL LUKUYU",
+        "stream": ""
+      },
+      {
+        "name": "JAY NGUGI",
+        "stream": ""
+      },
+      {
+        "name": "RIC BRIAN IRUNGU",
+        "stream": ""
+      },
+      {
+        "name": "AGLA KAHOSI",
+        "stream": ""
+      },
+      {
+        "name": "SUBJECT RANK",
+        "stream": ""
+      }
+    ]
+  },
+  "Grade 9": {
+    "comments": [
+      {
+        "name": "ABEL CHERUIYOT",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Abel is a quiet and calm learner who participates actively in learning activities. He has shown great progress in his performance this term and has developed a strong ability to work independently. He has increasingly become confident when tackling complex tasks. However, he is encouraged to put more effort in Mathematics.",
+        "competencies": "Abel excels in collaboration, working effectively with his peers to achieve shared goals during group projects",
+        "values": "Abel has demonstrated love, showing care for his environment and his peers."
+      },
+      {
+        "name": "BENEDICT WANGAI",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Benedict is a keen, observant and articulate learner who expresses his ideas clearly and effectively, he possesses a sharp eye for details in all learning activities. He has consistently shown high performance across learning areas. He actively participates in Basketball however; he is encouraged to put more effort into Kiswahili and maintain a firm focus on personal goals and avoid being swayed by the distraction of others.",
+        "competencies": "He has shown the ability to observe complex situations and offering logical, well-thought-out solutions during class discussions.",
+        "values": "He has remained true to his academic principles and producing work that reflects his own unique insights"
+      },
+      {
+        "name": "BRIGHTON AMBALE",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Brighton is a quiet and calm learner who maintains a steady performance with consistent effort across all learning areas. He an active participant in football games, however he is encouraged to maintain discipline in personal revision to sustain upward academic trend and to participate more in class discussion to build his confidence.",
+        "competencies": "He respects the diversity of his classmates and promotes environment during all school activities.",
+        "values": "Brighton displays peace n classroom and unity in the field through fair play in football."
+      },
+      {
+        "name": "CATHERINE NYAKAIRO",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Catherine is an exceptionally keen and focused learner who consistently sets high academic targets for herself. She has maintained an excellent academic record across all learning areas. She is encouraged to continue with the same spirit to realize her full potential.",
+        "competencies": "She demonstrates the ability to tackle complex tasks with a logical and well-thought-out approach.",
+        "values": "Catherine produces work that is a true reflection of her own abilities and academic principles."
+      },
+      {
+        "name": "CHRISTIAN WANGILA",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Christian is a quiet and observant learner who approaches tasks with clear, methodical plan. He has demonstrated a steady effort in his studies. He has shown academic improvement this term, especially in creative arts.  He actively participates in football activities. He is encouraged to develop greater cognitive flexibility when redirected and to put more effort into Kiswahili and Mathematics to improve his overall performance.",
+        "competencies": "Christian is gaining confidence in his academic abilities and is learning to tackle new challenges independently.",
+        "values": "Christian maintains a harmonious relationship with his peers and promotes a peaceful learning environment."
+      },
+      {
+        "name": "DAMARIS KAJEMBA",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Damaris is a quiet and calm  learner who  demonstrates an average understanding of concepts in class. She completes most tasks on time and has shown steady academic progress across most learning areas. She is an active member of basketball activities. With continued consistent focus on revision, she has the potential to achieve higher academic outcomes.",
+        "competencies": "Damaris communicates her ideas clearly in groups, showing basic skills in critical thinking and problem solving.",
+        "values": "Damaris is respectful, kind, and loving."
+      },
+      {
+        "name": "EMMANUEL HANS",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Emmanuel is a social, jovial and active leaner who pays close attention to learning concepts in class. He has shown steady academic progress. He is an active member of basketball activities . He has participated in Kenya Science and Engineering Fair this term up to county level. He is, however, encouraged to maintain a firm focus during personal revision to achieve better scores and divert his social energy to improve his academic performance.",
+        "competencies": "He has demonstrated the ability to work well with others during group activities and school games.",
+        "values": "Emmanuel shows respect to both his teachers and peers, fostering a positive classroom environment."
+      },
+      {
+        "name": "GABRIEL MUKOPI",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Gabriel is an exceptionally disciplined, proactive and focused learner who directs all attention to work at hand and consistently sets a high bar for academic excellence. He has consistently maintained a high academic standard across all learning areas. He has actively participated in the Kenya Science and Engineering Fair up to the county level, and he is an active participant in basketball games. However, he is encouraged to set more ambitious personal targets and embrace healthy competition to realize his full potential.",
+        "competencies": "He has demonstrated  independence in initiating research and maintaining high-quality work with zero supervision. He alsoshows strong analytical and problem- solving skill and  shows strong communication and collaboration skills contributing  meaningful ideas during discussions.",
+        "values": "He takes full ownership of his learning and consistently meets high-level academic targets."
+      },
+      {
+        "name": "GABRIELLA WANJIRU",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Gabriella is a jovial, calm and inquisitive learner    who consistently demonstrates a deep thirst for knowledge. she has consistently maintained   average academic standard. She completes her tasks on time and shows great focus during learning activities. She is an active participant in basketball. However, she is encouraged to participate more in class discussions to build her confidence.",
+        "competencies": "She shows the ability to work independently and manage her learning tasks effectively.",
+        "values": "Gabriella demonstrates a high level of responsibility by being organized and meeting all academic deadlines."
+      },
+      {
+        "name": "HAILEY WANJIKU",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Hailey is a jovial and active participant in class, she shows understanding of concepts leant in class with  steady academic progress. She is an active member of football activities and shows great teamwork. She is, however, encouraged to develop greater emotional resilience when faced with challenges or academic corrections and  maintain a firm focus during personal revision to achieve better scores.",
+        "competencies": "She has demonstrated the ability to work well with others during group activities and school games.",
+        "values": "Hailey shows respect to both her teachers and peers, fostering a positive classroom environment."
+      },
+      {
+        "name": "HAROLD REMMY",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Harold is an outgoing, disciplined, and highly social learner. He has consistently shown great academic improvement across all learning areas this term; the scores are on an upward trend. However, he needs to work on time management and is encouraged to channel his social energy into his studies to ensure high academic consistency.",
+        "competencies": "He has shown consistent respect for diversity and his helpful nature towards his classmates.",
+        "values": "He shows profound respect for teachers and learners and includes every peer in group discussion interactions, offering support where needed."
+      },
+      {
+        "name": "HELLEN WAITHERA",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Hellen is a quiet and calm learner who participates actively in learning activities. She has shown great progress in her performance this term and has developed a strong ability to work independently. She has increasingly become confident when tackling complex tasks. However, she is encouraged to put more effort in Mathematics.",
+        "competencies": "– Hellen excels in collaboration, working effectively with her peers to achieve shared goals during group projects.",
+        "values": "Hellen has demonstrated love, showing care for her environment and her peers."
+      },
+      {
+        "name": "JAIDEN NJENGA",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Jaiden is a respectful, active and highly organized learner who maintains a neat presentation in all tasks. He collaboratively works harmoniously with peers during projects and he has shown improvement in his academic achievement across all learning areas. He is an active participant in basketball activities. However, he is encouraged to focus on more rigorous revision across all learning areas and to maintain firm focus on personal goals rather than being swayed by the distraction of others.",
+        "competencies": "Jaiden proactively uses diverse resources to improve his academic performance.",
+        "values": "Jaiden demonstrates respect to all teachers; he also listens to classmates' opinions during group work without interrupting, fostering a culture of mutual regard."
+      },
+      {
+        "name": "KEVIN MATALANGA",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Kevin is a quiet and observant learner who   actively participates in learning activities. He has shown commendable academic improvement this term with steady effort meeting the required academic standards. However, he is encouraged to believe in his own potential and set more ambitious personal targets and  adopt a consistent daily revision routine and improve his work presentation to secure high scores.",
+        "competencies": "– Kevin has shown willingness to support work with peers harmoniously within a team.",
+        "values": "Kevin demonstrates attentive listening and a calm and humble approach to classroom interactions."
+      },
+      {
+        "name": "KEZZY EMMANUELLA",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Kezzy is an exceptionally confident, keen listener and articulate learner who articulates her ideas with clarity and poise. She has risen in her academic achievement consistently by exceeding expectations across most learning areas. However, she is encouraged to put more effort into Mathematics and Science for better academic achievement.",
+        "competencies": "She has shown the ability to articulate her ideas clearly and to lead discussions during group activities.",
+        "values": "Kezzy demonstrates genuine kindness and empathy to peers, fostering a supportive learning environment."
+      },
+      {
+        "name": "LEONE GICHERU",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Leone is a quiet, respectful, and very observant learner. He has shown a steady and reliable academic record. He is an active member of football activities. However, he is encouraged to improve his work presentation, participate more in class discussions to build confidence in public speaking, and improve in Mathematics.",
+        "competencies": "– Leone is learning to believe in his abilities to tackle new challenges one step at a time.",
+        "values": "Leone has shown respect for all teachers and peers in and out of the classroom."
+      },
+      {
+        "name": "RAYNA HANANI",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Rayna is respectful, empathetic and   a very keen learner who pays close attention to instruction. She has shown academic improvement across learning areas and has actively participated in the Kenya Science and Engineering fair this term. However, she is encouraged to put more effort into Mathematics.",
+        "competencies": "Rayna has shown growing ability to manage personal study schedules and complete tasks independently. She has also demonstrates acquisition of core competencies particularly in communication and collaboration where she works with others effectively in groups. Critical thinking by tackling more complex and independent problems",
+        "values": "Rayna maintains a harmonious environment by showing profound respect to teachers and valuing the diverse opinions of all classmates"
+      },
+      {
+        "name": "SHALOM GIKUBU",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Shalom is vibrant and social leaner who brings great energy to class activities. He demonstrates a good understanding of topics covered and often eager to share his thoughts. He has participated actively in the Kenya Science and Engineering fair up to county level and he is an active participant in basketball games. however, he is encouraged to minimize distracting others during periods of independent study, this will ensure more productive learning environment for themselves and other peers.",
+        "competencies": "He has shown the ability to work with others to achieve shared goals in class projects and group activities",
+        "values": "He exhibits high responsibility by consistently meeting deadlines and reliably supporting peers during collaborative projects."
+      },
+      {
+        "name": "SHAMMAH CHEGE",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Shammah is a highly and charismatic  learner who  possesses significant influence over other peers .He completes his work with guidance. He has shown progress in his academics, however with fluctuation. He is encouraged to use his influence responsibly by modelling focused behavior during independent tasks and  to commit to steady revision and improve his work presentation to achieve more consistent results. He is an active participant in football games.",
+        "competencies": "– He shows willingness to support peers and work harmoniously within a team",
+        "values": "Shammah fosters love by sharing learning materials and personal resources generously with others."
+      },
+      {
+        "name": "SHAUN MBURU",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Shaun is a jovial, keen, and energetic learner who participates actively in learning activities. He has maintained a strong academic record through keen observation and active classroom participation. He is a highly active basketball player who demonstrates agility, discipline, and strategic play. However, he is encouraged to develop greater self-regulation to ensure a focused environment for himself and peers and maintain his academic focus to improve in areas of weakness.",
+        "competencies": "– Shaun has demonstrated his ability to lead peers and articulate his ideas clearly.",
+        "values": "Shaun demonstrates respect by listening to diverse peer opinions and following teacher guidance. He also shows fair play and honesty in his work."
+      },
+      {
+        "name": "VICTORIA ODHIAMBO",
+        "stream": "",
+        "teacher": "TR.DIANA",
+        "performance": "Victoria is a social, keen listener and intelligent leaner who maintains excellent standards and participates actively in all classroom activities. She took  part in Kenya Science and Engineering fair up to county level and  actively I participates in basketball games. However, she is encouraged to maintain a steady revision rhythm to stabilize her performance.",
+        "competencies": "Victoria has a sense of social responsibility and active participation in the welfare of the school community.She has also shows strong communication and collaboration skills and contributes meaningful ideas during discussions.",
+        "values": "Victoria exhibits a selfless nature, often putting the safety and well-being of others before her own personal interest."
+      }
+    ],
+    "marks_students": [
+      {
+        "name": "GABRIEL MUKOPI",
+        "stream": ""
+      },
+      {
+        "name": "BENEDICT WANGAI",
+        "stream": ""
+      },
+      {
+        "name": "SHALOM GIKUBU",
+        "stream": ""
+      },
+      {
+        "name": "VICTORIA ODHIAMBO",
+        "stream": ""
+      },
+      {
+        "name": "HAROLD REMMY",
+        "stream": ""
+      },
+      {
+        "name": "EMMANUEL HANS",
+        "stream": ""
+      },
+      {
+        "name": "CHRISTIAN WANGILA",
+        "stream": ""
+      },
+      {
+        "name": "SHAUN MBURU",
+        "stream": ""
+      },
+      {
+        "name": "KEZZY EMMANUELLA",
+        "stream": ""
+      },
+      {
+        "name": "RAYNA HANANI",
+        "stream": ""
+      },
+      {
+        "name": "CATHERINE NYAKAIRO",
+        "stream": ""
+      },
+      {
+        "name": "JAIDEN NJENGA",
+        "stream": ""
+      },
+      {
+        "name": "ABEL CHERUIYOT",
+        "stream": ""
+      },
+      {
+        "name": "DAMARIS KAJEMBA",
+        "stream": ""
+      },
+      {
+        "name": "BRIGHTON AMBALE",
+        "stream": ""
+      },
+      {
+        "name": "GABRIELLA WANJIRU",
+        "stream": ""
+      },
+      {
+        "name": "KEVIN MATALANGA",
+        "stream": ""
+      },
+      {
+        "name": "HELLEN WAITHERA",
+        "stream": ""
+      },
+      {
+        "name": "LEONE GICHERU",
+        "stream": ""
+      },
+      {
+        "name": "HAILEY WANJIKU",
+        "stream": ""
+      },
+      {
+        "name": "SHAMMAH CHEGE",
+        "stream": ""
+      },
+      {
+        "name": "SUBJECT RANK",
+        "stream": ""
+      }
+    ]
+  }
+}
+
+
+GRADE_MAP = {
+    "PP1": "PP1", "PP2": "PP2",
+    "Grade 1": "Grade 1", "Grade 2": "Grade 2", "Grade 3": "Grade 3",
+    "Grade 4": "Grade 4", "Grade 5": "Grade 5", "Grade 6": "Grade 6",
+    "Grade 7": "Grade 7", "Grade 8": "Grade 8", "Grade 9": "Grade 9",
+}
+
+def title_case(name):
+    """Properly capitalise a student name."""
+    return " ".join(w.capitalize() for w in name.split())
+
+def find_stream(grade, stream_name):
+    """Find stream by name, default to RED if not found."""
+    s = stream_name.strip().upper() if stream_name else "RED"
+    stream = Stream.query.filter_by(grade_id=grade.id, name=s).first()
+    if not stream:
+        stream = Stream.query.filter_by(grade_id=grade.id).first()
+    return stream
+
+def adm_number(grade_name, stream_name, index):
+    """Auto-generate admission number: e.g. CIS-G7R-001"""
+    g = grade_name.replace("Grade ", "G").replace("PP", "PP")
+    s = (stream_name or "R")[0]
+    return f"CIS-{g}{s}-{index:03d}"
+
+def run():
+    app = create_app()
+    with app.app_context():
+        active_term = Term.query.filter_by(is_active=True).first()
+        if not active_term:
+            print("❌ No active term found. Run seed.py first.")
+            return
+
+        total_added    = 0
+        total_skipped  = 0
+        total_comments = 0
+
+        for grade_name, payload in IMPORT_DATA.items():
+            grade = Grade.query.filter_by(name=grade_name).first()
+            if not grade:
+                print(f"  ⚠️  Grade not found: {grade_name} — skipping")
+                continue
+
+            comments_lookup = {}
+            for c in payload.get("comments", []):
+                key = title_case(c["name"]).lower()
+                comments_lookup[key] = c
+
+            # Merge student lists: prefer comments (has stream+teacher), fill from marks
+            seen_names = set()
+            students_to_add = []
+
+            for c in payload.get("comments", []):
+                name = title_case(c["name"])
+                key  = name.lower()
+                if key not in seen_names:
+                    seen_names.add(key)
+                    students_to_add.append({"name": name, "stream": c.get("stream","RED"), "from": "comments"})
+
+            for m in payload.get("marks_students", []):
+                name = title_case(m["name"])
+                key  = name.lower()
+                if key not in seen_names:
+                    seen_names.add(key)
+                    students_to_add.append({"name": name, "stream": m.get("stream","RED"), "from": "marks"})
+
+            grade_added = 0
+            for idx, s in enumerate(students_to_add, 1):
+                name   = s["name"]
+                stream = find_stream(grade, s["stream"])
+                adm    = adm_number(grade_name, s["stream"], idx)
+
+                # Skip if already exists
+                existing = Student.query.filter_by(full_name=name, grade_id=grade.id).first()
+                if existing:
+                    total_skipped += 1
+                    student = existing
+                else:
+                    student = Student(
+                        full_name=name,
+                        admission_no=adm,
+                        grade_id=grade.id,
+                        stream_id=stream.id if stream else None,
+                        is_active=True,
+                    )
+                    db.session.add(student)
+                    db.session.flush()
+                    grade_added += 1
+                    total_added += 1
+
+                # Load comments if available
+                comment_data = comments_lookup.get(name.lower())
+                if comment_data and (comment_data.get("performance") or comment_data.get("values")):
+                    rc = ReportCard.query.filter_by(student_id=student.id, term_id=active_term.id).first()
+                    if not rc:
+                        rc = ReportCard(student_id=student.id, term_id=active_term.id)
+                        db.session.add(rc)
+                    rc.comment_performance  = comment_data.get("performance", "")
+                    rc.comment_competencies = comment_data.get("competencies", "")
+                    rc.comment_values       = comment_data.get("values", "")
+                    rc.status = "pending_approval"
+                    total_comments += 1
+
+            db.session.commit()
+            print(f"  ✅ {grade_name:10s} — {grade_added} students added, {len(comments_lookup)} comments loaded")
+
+        print(f"\n{'='*55}")
+        print(f"  ✅ Import complete!")
+        print(f"  Students added:    {total_added}")
+        print(f"  Already existed:   {total_skipped}")
+        print(f"  Comments loaded:   {total_comments}")
+        print(f"{'='*55}\n")
+
+if __name__ == "__main__":
+    run()

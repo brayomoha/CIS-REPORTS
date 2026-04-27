@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Manage Streams{% endblock %}
+{% block topbar_title %}Manage Streams{% endblock %}
+{% block extra_css %}
+<style>
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:10px;padding:28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-family:'DM Serif Display',serif;font-size:1.1rem;color:#002147;margin-bottom:16px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Manage Streams</h1>
+  <p>Add, rename, or remove class streams per grade</p></div>
+  <div class="ph-act">
+    <button class="btn btn-p" onclick="document.getElementById('addModal').classList.add('show')">+ Add Stream</button>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-o btn-sm">← Back</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr>
+      <th>Grade</th>
+      <th>Stream Name</th>
+      <th>Students</th>
+      <th class="c">Actions</th>
+    </tr></thead>
+    <tbody>
+    {% for grade in grades %}
+    {% for stream in grade.streams %}
+    <tr>
+      <td><strong>{{ grade.name }}</strong></td>
+      <td>{{ stream.name }}</td>
+      <td>{{ stream.students|selectattr('is_active')|list|length }}</td>
+      <td class="c">
+        <button class="btn btn-o btn-xs"
+          onclick="openRename({{ stream.id }},'{{ stream.name }}')">✏️ Rename</button>
+        <form method="POST" action="{{ url_for('admin.delete_stream', stream_id=stream.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Delete {{ grade.name }} {{ stream.name }}? This cannot be undone.')">
+          <button type="submit" class="btn btn-bad btn-xs">🗑 Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ADD STREAM MODAL -->
+<div class="modal" id="addModal">
+  <div class="modal-box">
+    <h3>Add New Stream</h3>
+    <form method="POST" action="{{ url_for('admin.add_stream') }}">
+      <div class="fg">
+        <label>Grade</label>
+        <select name="grade_id" required>
+          <option value="">Select Grade</option>
+          {% for grade in grades %}
+          <option value="{{ grade.id }}">{{ grade.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="fg">
+        <label>Stream Name</label>
+        <input type="text" name="stream_name" placeholder="e.g. BLUE, GREEN, RED" required>
+        <small style="color:#9a9a90;font-size:.72rem">Use any name — RED, YELLOW, BLUE, A, B, etc.</small>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:6px">
+        <button type="submit" class="btn btn-p">Add Stream</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('addModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div class="modal" id="renameModal">
+  <div class="modal-box">
+    <h3>Rename Stream</h3>
+    <form id="renameForm" method="POST">
+      <div class="fg">
+        <label>New Stream Name</label>
+        <input type="text" name="new_name" id="renameInput" required>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:6px">
+        <button type="submit" class="btn btn-p">Save</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('renameModal').classList.remove('show')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function openRename(id, name) {
+  document.getElementById('renameForm').action = '/admin/streams/' + id + '/rename';
+  document.getElementById('renameInput').value = name;
+  document.getElementById('renameModal').classList.add('show');
+}
+</script>
+{% endblock %}
