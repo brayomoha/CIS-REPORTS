@@ -137,26 +137,35 @@ def load_all_data():
                         if val is None:
                             continue
                         if isinstance(val, dict):
+                            # Split subject from Excel (English/Kiswahili with p1+p2)
+                            # Use pct if given, otherwise use p1 directly as the score
                             p1  = val.get("p1") or None
                             p2  = val.get("p2") or None
                             pct = val.get("pct") or None
-                            if not p1 and not p2:
+                            if pct:
+                                effective = float(pct)
+                            elif p1:
+                                effective = float(p1)
+                            else:
                                 continue
-                            p1max    = 50 if grade_name in ["Grade 7","Grade 8","Grade 9"] else 40
-                            p2max    = 50 if grade_name in ["Grade 7","Grade 8","Grade 9"] else 10
-                            combined = float(pct) if pct else combine_split_subject(p1, p2, p1max, p2max)
-                            code, label = assign_performance_level(combined, grade_name) if combined else (None, None)
+                            # Cap at max for grade level
+                            max_s = 100 if grade_name in ["Grade 7","Grade 8","Grade 9"] else 30
+                            effective = min(int(round(float(effective))), max_s)
+                            code, label = assign_performance_level(effective, grade_name)
                             mark = Mark.query.filter_by(student_id=student.id,
                                 assessment_id=end_ass.id, subject=subject).first()
                             if not mark:
                                 mark = Mark(student_id=student.id,
                                     assessment_id=end_ass.id, subject=subject)
                                 db.session.add(mark)
-                            mark.paper1_score=p1; mark.paper2_score=p2
-                            mark.combined_score=combined; mark.score=None
+                            mark.score=effective; mark.paper1_score=None
+                            mark.paper2_score=None; mark.combined_score=None
                             mark.grade_code=code; mark.grade_label=label
                         else:
                             effective = float(val)
+                            # Cap at max for grade level
+                            max_s = 100 if grade_name in ["Grade 7","Grade 8","Grade 9"] else 30
+                            effective = min(int(round(float(effective))), max_s)
                             code, label = assign_performance_level(effective, grade_name)
                             mark = Mark.query.filter_by(student_id=student.id,
                                 assessment_id=end_ass.id, subject=subject).first()
