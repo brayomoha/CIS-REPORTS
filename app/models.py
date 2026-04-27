@@ -167,16 +167,10 @@ SUBJECTS_BY_LEVEL = {
 # Format: { level_group: { subject: (paper1_label, paper1_max, paper2_label, paper2_max) } }
 # ---------------------------------------------------------------------------
 
-SPLIT_SUBJECTS = {
-    "upper_primary": {
-        "English":   ("Paper", 40, "Composition", 10),
-        "Kiswahili": ("Paper", 40, "Insha", 10),
-    },
-    "junior": {
-        "English":   ("PP1", 50, "PP2", 50),
-        "Kiswahili": ("PP1", 50, "PP2", 50),
-    },
-}
+# NO SPLIT SUBJECTS — all subjects use a single score
+# Grade 1-6: score out of 30
+# Grade 7-9: score out of 100
+SPLIT_SUBJECTS = {}
 
 
 def get_grade_level(grade_name):
