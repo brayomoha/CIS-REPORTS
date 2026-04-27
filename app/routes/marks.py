@@ -158,10 +158,11 @@ def save_marks():
 
             # All subjects now use a single score input (no split papers)
             raw = request.form.get(field_key, "").strip()
-            score    = float(raw) if raw else None
-            paper1   = None
-            paper2   = None
-            combined = None
+            # Store as whole integer — no decimals allowed
+            score     = int(round(float(raw))) if raw else None
+            paper1    = None
+            paper2    = None
+            combined  = None
             effective = score
 
             # Grade band
