@@ -2,89 +2,162 @@
 {% block title %}Students{% endblock %}
 {% block topbar_title %}Manage Students{% endblock %}
 {% block extra_css %}
-<style>.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}.modal.show{display:flex}.modal-box{background:#fff;border-radius:10px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}.modal-box h3{font-family:'DM Serif Display',serif;font-size:1.15rem;color:#002147;margin-bottom:18px}</style>
+<style>
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:10px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-family:'DM Serif Display',serif;font-size:1.1rem;color:#002147;margin-bottom:16px}
+</style>
 {% endblock %}
 {% block content %}
 <div class="ph">
   <div><h1>Students</h1><p>{{ students|length }} learners found</p></div>
   <div class="ph-act">
-    <button class="btn btn-p" onclick="document.getElementById('addModal').classList.add('show')">+ Add Student</button>
-    <button class="btn btn-o" onclick="document.getElementById('importModal').classList.add('show')">⬆ Import Excel</button>
+    <button class="btn btn-p" onclick="document.getElementById('addModal').classList.add('show')">+ Add Learner</button>
   </div>
 </div>
 
 <!-- FILTER -->
 <div class="card" style="padding:14px 18px">
   <form method="GET" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-    <div class="fg" style="margin:0;flex:1;min-width:160px"><label>Filter by Grade</label>
-      <select name="grade_id" onchange="this.form.submit()"><option value="">All Grades</option>{% for g in grades %}<option value="{{ g.id }}" {% if selected_grade==g.id %}selected{% endif %}>{{ g.name }}</option>{% endfor %}</select>
+    <div class="fg" style="margin:0;flex:1;min-width:140px">
+      <label>Grade</label>
+      <select name="grade_id" onchange="this.form.submit()">
+        <option value="">All Grades</option>
+        {% for g in grades %}
+        <option value="{{ g.id }}" {% if selected_grade==g.id %}selected{% endif %}>{{ g.name }}</option>
+        {% endfor %}
+      </select>
     </div>
-    <div class="fg" style="margin:0;flex:1;min-width:160px"><label>Filter by Stream</label>
-      <select name="stream_id" onchange="this.form.submit()"><option value="">All Streams</option>{% for s in streams %}<option value="{{ s.id }}" {% if selected_stream==s.id %}selected{% endif %}>{{ s.grade.name }} {{ s.name }}</option>{% endfor %}</select>
+    <div class="fg" style="margin:0;flex:1;min-width:140px">
+      <label>Stream</label>
+      <select name="stream_id" onchange="this.form.submit()">
+        <option value="">All Streams</option>
+        {% for s in streams %}
+        <option value="{{ s.id }}" {% if selected_stream==s.id %}selected{% endif %}>{{ s.grade.name }} {{ s.name }}</option>
+        {% endfor %}
+      </select>
     </div>
+    <button type="submit" class="btn btn-o btn-sm">Filter</button>
     <a href="{{ url_for('admin.students') }}" class="btn btn-o btn-sm">Clear</a>
   </form>
 </div>
 
-<div class="card">
-  {% if students %}
+<div class="card" style="padding:0">
   <div class="tw"><table>
-    <thead><tr><th>Adm No.</th><th>Full Name</th><th>Grade</th><th>Stream</th><th>Gender</th><th>Parent Email</th></tr></thead>
+    <thead><tr>
+      <th style="width:40px">#</th>
+      <th>Name</th>
+      <th>Admission No</th>
+      <th>Grade</th>
+      <th>Stream</th>
+      <th class="c">Actions</th>
+    </tr></thead>
     <tbody>
-    {% for s in students %}
+    {% for student in students %}
     <tr>
-      <td style="font-family:monospace;color:#666">{{ s.admission_no }}</td>
-      <td><strong>{{ s.full_name }}</strong></td>
-      <td>{{ s.grade.name }}</td>
-      <td>{% if s.stream %}{{ s.stream.name }}{% else %}<span style="color:#ccc">—</span>{% endif %}</td>
-      <td>{{ s.gender or '—' }}</td>
-      <td style="color:#666;font-size:.78rem">{{ s.parent_email or '—' }}</td>
+      <td style="color:#9a9a90;font-size:.78rem">{{ loop.index }}</td>
+      <td><strong>{{ student.full_name }}</strong></td>
+      <td style="font-size:.75rem;color:#aaa">{{ student.admission_no }}</td>
+      <td style="font-size:.8rem">{{ student.grade.name }}</td>
+      <td style="font-size:.8rem">{{ student.stream.name if student.stream else '—' }}</td>
+      <td class="c">
+        <button class="btn btn-o btn-xs"
+          onclick="openEdit({{ student.id }},'{{ student.full_name }}')">
+          ✏️ Edit
+        </button>
+        <form method="POST"
+              action="{{ url_for('admin.remove_student', student_id=student.id) }}"
+              style="display:inline"
+              onsubmit="return confirm('Remove {{ student.full_name }} from the system?')">
+          <button type="submit" class="btn btn-bad btn-xs">🗑 Remove</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
+    {% if not students %}
+    <tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px">No students found</td></tr>
+    {% endif %}
     </tbody>
   </table></div>
-  {% else %}
-  <div class="empty"><div class="ei">🎒</div><p>No students found. Add students or import from Excel.</p></div>
-  {% endif %}
 </div>
 
 <!-- ADD MODAL -->
 <div class="modal" id="addModal">
   <div class="modal-box">
-    <h3>Add New Student</h3>
+    <h3>Add New Learner</h3>
     <form method="POST" action="{{ url_for('admin.add_student') }}">
-      <div class="form-row">
-        <div class="fg"><label>Full Name</label><input type="text" name="full_name" required></div>
-        <div class="fg"><label>Admission No.</label><input type="text" name="admission_no" required></div>
+      <div class="fg">
+        <label>Full Name</label>
+        <input type="text" name="full_name" required placeholder="e.g. Jane Wanjiku Kamau">
       </div>
-      <div class="form-row">
-        <div class="fg"><label>Grade</label><select name="grade_id" required><option value="">Select Grade</option>{% for g in grades %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select></div>
-        <div class="fg"><label>Stream</label><select name="stream_id"><option value="">— None —</option>{% for s in streams %}<option value="{{ s.id }}">{{ s.grade.name }} {{ s.name }}</option>{% endfor %}</select></div>
+      {% if session.get('role') in ['admin','principal'] %}
+      <div class="fg">
+        <label>Grade</label>
+        <select name="grade_id" id="addGrade" onchange="filterStreams(this.value)">
+          <option value="">— Select Grade —</option>
+          {% for g in grades %}
+          <option value="{{ g.id }}">{{ g.name }}</option>
+          {% endfor %}
+        </select>
       </div>
-      <div class="form-row">
-        <div class="fg"><label>Gender</label><select name="gender"><option value="">— Not set —</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
-        <div class="fg"><label>Parent Email (optional)</label><input type="email" name="parent_email"></div>
+      <div class="fg">
+        <label>Stream</label>
+        <select name="stream_id" id="addStream">
+          <option value="">— Select Stream —</option>
+          {% for s in streams %}
+          <option value="{{ s.id }}" data-grade="{{ s.grade_id }}">{{ s.grade.name }} {{ s.name }}</option>
+          {% endfor %}
+        </select>
       </div>
-      <div style="display:flex;gap:9px;margin-top:6px">
-        <button type="submit" class="btn btn-p">Add Student</button>
+      {% endif %}
+      <div class="fg">
+        <label>Gender</label>
+        <select name="gender">
+          <option value="">— Optional —</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:10px">
+        <button type="submit" class="btn btn-p">Add Learner</button>
         <button type="button" class="btn btn-o" onclick="document.getElementById('addModal').classList.remove('show')">Cancel</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- IMPORT MODAL -->
-<div class="modal" id="importModal">
+<!-- EDIT MODAL -->
+<div class="modal" id="editModal">
   <div class="modal-box">
-    <h3>Import Students from Excel</h3>
-    <p style="font-size:.8rem;color:#666;margin-bottom:16px">Excel columns needed: <strong>Name, Admission No, Grade, Stream, Gender, Parent Email</strong></p>
-    <form method="POST" action="{{ url_for('admin.import_students') }}" enctype="multipart/form-data">
-      <div class="fg"><label>Excel File (.xlsx)</label><input type="file" name="excel_file" accept=".xlsx,.xls" required></div>
-      <div style="display:flex;gap:9px;margin-top:6px">
-        <button type="submit" class="btn btn-p">Import</button>
-        <button type="button" class="btn btn-o" onclick="document.getElementById('importModal').classList.remove('show')">Cancel</button>
+    <h3>Edit Learner Name</h3>
+    <form method="POST" id="editForm">
+      <div class="fg">
+        <label>Full Name</label>
+        <input type="text" name="full_name" id="editName" required>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:10px">
+        <button type="submit" class="btn btn-p">Save</button>
+        <button type="button" class="btn btn-o" onclick="document.getElementById('editModal').classList.remove('show')">Cancel</button>
       </div>
     </form>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function openEdit(id, name) {
+  document.getElementById('editForm').action = '/admin/students/' + id + '/edit-name';
+  document.getElementById('editName').value = name;
+  document.getElementById('editModal').classList.add('show');
+}
+function filterStreams(gradeId) {
+  var sel = document.getElementById('addStream');
+  for (var i = 0; i < sel.options.length; i++) {
+    var opt = sel.options[i];
+    opt.style.display = (!gradeId || opt.dataset.grade == gradeId || opt.value == '') ? '' : 'none';
+  }
+  sel.value = '';
+}
+</script>
 {% endblock %}
