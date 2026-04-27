@@ -105,8 +105,11 @@ def level_cell(code):
 def score_cell(val):
     if val is None or val == "":
         return center("—", size=8, color=DGREY)
-    return center(str(int(round(float(val)))) if isinstance(val, float) else str(val),
-                  size=8, bold_=True)
+    # Always show as whole integer — no decimals
+    try:
+        return center(str(int(round(float(val)))), size=8, bold_=True)
+    except (ValueError, TypeError):
+        return center(str(val), size=8, bold_=True)
 
 
 # ── HEADER — identical across all templates ──────────────────────────────────
@@ -340,32 +343,14 @@ def build_marks_table(report_data, usable_w):
 
     # ── Data rows ────────────────────────────────────
     for subj in subjects:
-        is_split = subj in split
-        if is_split:
-            p1l, p1m, p2l, p2m = split[subj]
-            # Show subject name with paper label only (no insha/composition mention)
-            subj_cell = normal(
-                f"{subj}",
-                size=8
-            )
-        else:
-            subj_cell = normal(subj, size=8)
-
+        subj_cell = normal(subj, size=8)
         row = [subj_cell]
         for ass_num, _ in ass_cols:
             summary   = assessments.get(ass_num, {})
             subj_data = summary.get("subjects", {}).get(subj, {})
             code      = subj_data.get("grade_code", "—")
-
-            # For split subjects (Eng/Kisw): show only the main paper score
-            # not the insha/composition combined percentage
-            if is_split:
-                sc = subj_data.get("paper1")
-            else:
-                sc = subj_data.get("score")
-
+            sc        = subj_data.get("score")
             row += [score_cell(sc), level_cell(code)]
-
         rows.append(row)
 
     # ── Span header cells ────────────────────────────
@@ -592,3 +577,49 @@ def generate_report_pdf(report_data, student):
 
     doc.build(story)
     return filepath
+
+def generate_report_pdf_bytes(report_data, student):
+    """
+    Generate one PDF report card and return as bytes (no disk write).
+    Used for bulk ZIP download.
+    """
+    import io
+
+    L_MARGIN = R_MARGIN = 2 * cm
+    T_MARGIN = B_MARGIN = 1.5 * cm
+    usable_w = W - L_MARGIN - R_MARGIN
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=L_MARGIN, rightMargin=R_MARGIN,
+        topMargin=T_MARGIN, bottomMargin=B_MARGIN,
+    )
+
+    level    = get_grade_level(report_data["grade"])
+    story    = []
+    comments = report_data.get("comments", {})
+
+    build_header(story)
+    build_info_row(story, report_data, usable_w)
+
+    if level != "reception":
+        story.append(build_key_table(level, usable_w))
+        story.append(Spacer(1, 6))
+
+    if level == "reception":
+        story.append(build_key_table(level, usable_w))
+        story.append(Spacer(1, 6))
+        for part in build_reception_skills_table(report_data, usable_w):
+            story.append(part)
+    else:
+        story.append(build_marks_table(report_data, usable_w))
+
+    story.append(Spacer(1, 8))
+    build_feedback(story, comments, level)
+    build_dates(story, report_data, usable_w)
+    build_signatures(story, usable_w)
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.read()
